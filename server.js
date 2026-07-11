@@ -11,9 +11,6 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static('.'));
 
-// ================================================================
-//  MONGODB CONNECTION
-// ================================================================
 const MONGODB_URI = 'mongodb+srv://surujsarkar01_db_user:hSiXnPCwFKWeChNm@cluster0.uovzwiy.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
 const DB_NAME = 'bd_unique_method';
 let db, numbersCollection, otpsCollection, usersCollection, transactionsCollection;
@@ -28,7 +25,6 @@ async function connectDB() {
     usersCollection = db.collection('users');
     transactionsCollection = db.collection('transactions');
     console.log('✅ MongoDB Connected Successfully!');
-
     await seedDefaultData();
   } catch (error) {
     console.error('❌ MongoDB Connection Error:', error);
@@ -49,7 +45,6 @@ async function seedDefaultData() {
     ]);
     console.log('✅ Default numbers seeded');
   }
-
   const usersCount = await usersCollection.countDocuments();
   if (usersCount === 0) {
     await usersCollection.insertOne({
@@ -60,7 +55,6 @@ async function seedDefaultData() {
     });
     console.log('✅ Default user seeded');
   }
-
   const otpsCount = await otpsCollection.countDocuments();
   if (otpsCount === 0) {
     await otpsCollection.insertMany([
@@ -72,17 +66,12 @@ async function seedDefaultData() {
   }
 }
 
-// ================================================================
-//  API ROUTES
-// ================================================================
-
 app.get('/api/stats', async (req, res) => {
   try {
     const user = await usersCollection.findOne({});
     const allOtps = await otpsCollection.find({}).toArray();
     const totalOtps = allOtps.length;
     const successOtps = allOtps.filter(o => o.status === 'success').length;
-
     res.json({
       success: true,
       today: {
@@ -182,7 +171,6 @@ app.post('/api/create-otp', async (req, res) => {
       timestamp: new Date().toISOString()
     };
     await otpsCollection.insertOne(newOtp);
-
     if (newOtp.status === 'success') {
       const earned = 0.650;
       await usersCollection.updateOne(
@@ -221,9 +209,6 @@ app.post('/api/add-number', async (req, res) => {
   }
 });
 
-// ================================================================
-//  START SERVER
-// ================================================================
 connectDB().then(() => {
   app.listen(PORT, () => {
     console.log(`✅ BD UNIQUE METHOD Server running at http://localhost:${PORT}`);
