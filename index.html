@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BD UNIQUE METHOD — OTP Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{--bg-primary:#0b0f1a;--bg-card:#111827;--bg-card-hover:#1a2236;--accent-blue:#3b82f6;--accent-cyan:#06b6d4;--accent-gradient:linear-gradient(135deg,#3b82f6,#06b6d4);--text-primary:#f1f5f9;--text-secondary:#94a3b8;--text-muted:#475569;--radius:16px;--radius-sm:10px}
+    body{background:var(--bg-primary);color:var(--text-primary);font-family:'Inter',sans-serif;min-height:100vh}
+    ::-webkit-scrollbar{width:4px}
+    ::-webkit-scrollbar-track{background:var(--bg-primary)}
+    ::-webkit-scrollbar-thumb{background:var(--accent-blue);border-radius:10px}
+    .sidebar{position:fixed;top:0;left:0;width:240px;height:100vh;background:var(--bg-card);border-right:1px solid rgba(59,130,246,0.04);padding:1.5rem 1rem;overflow-y:auto;z-index:100;transition:transform .3s ease}
+    .sidebar .logo{font-size:1.3rem;font-weight:900;background:var(--accent-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.25rem}
+    .sidebar .subtitle{font-size:.6rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:2rem}
+    .sidebar .nav-item{display:flex;align-items:center;gap:.75rem;padding:.6rem .8rem;border-radius:var(--radius-sm);color:var(--text-secondary);font-size:.85rem;font-weight:500;transition:all .2s;cursor:pointer;margin-bottom:.2rem;text-decoration:none}
+    .sidebar .nav-item:hover{background:rgba(59,130,246,0.04);color:var(--text-primary)}
+    .sidebar .nav-item.active{background:rgba(59,130,246,0.08);color:var(--accent-blue);border-left:2px solid var(--accent-blue)}
+    .sidebar .nav-item i{width:1.2rem;text-align:center}
+    .sidebar .nav-section{font-size:.55rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);font-weight:600;padding:.8rem .8rem .4rem .8rem;margin-top:.5rem}
+    .main-content{margin-left:240px;padding:1.5rem 2rem;min-height:100vh}
+    .top-header{display:flex;justify-content:space-between;align-items:center;padding-bottom:1.5rem;border-bottom:1px solid rgba(255,255,255,0.03);margin-bottom:1.5rem}
+    .top-header .balance{background:rgba(59,130,246,0.06);padding:.3rem 1rem;border-radius:20px;font-size:.8rem;color:var(--text-secondary)}
+    .top-header .balance span{color:var(--accent-cyan);font-weight:700}
+    .card{background:var(--bg-card);border:1px solid rgba(59,130,246,0.04);border-radius:var(--radius);padding:1.25rem 1.5rem;transition:all .3s ease}
+    .card:hover{background:var(--bg-card-hover);border-color:rgba(59,130,246,0.08);transform:translateY(-2px);box-shadow:0 0 40px -10px rgba(59,130,246,0.06)}
+    .stat-number{font-size:2rem;font-weight:800;color:var(--text-primary);letter-spacing:-.5px}
+    .stat-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);font-weight:600}
+    .all-time-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem}
+    .all-time-grid .stat-card{background:var(--bg-card);border:1px solid rgba(59,130,246,0.04);border-radius:var(--radius-sm);padding:1rem 1.2rem;text-align:center;transition:all .3s}
+    .all-time-grid .stat-card:hover{background:var(--bg-card-hover);border-color:rgba(59,130,246,0.08)}
+    .all-time-grid .stat-card .number{font-size:1.6rem;font-weight:800;background:var(--accent-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .all-time-grid .stat-card .label{font-size:.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600;margin-top:.2rem}
+    .table-wrap{overflow-x:auto;border-radius:var(--radius-sm)}
+    .table-wrap table{width:100%;border-collapse:collapse}
+    .table-wrap th{text-align:left;padding:.6rem .8rem;font-size:.6rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);font-weight:600;border-bottom:1px solid rgba(255,255,255,0.03)}
+    .table-wrap td{padding:.6rem .8rem;font-size:.8rem;border-bottom:1px solid rgba(255,255,255,0.02);color:var(--text-secondary)}
+    .table-wrap tr:hover td{background:rgba(255,255,255,0.02)}
+    .otp-badge{background:rgba(6,182,212,0.08);color:#06b6d4;font-weight:700;padding:.1rem .6rem;border-radius:12px;font-size:.7rem;border:1px solid rgba(6,182,212,0.1)}
+    .menu-btn{display:none;background:transparent;border:none;color:var(--text-secondary);font-size:1.5rem;cursor:pointer;padding:.3rem}
+    .page-section{display:none}
+    .page-section.active{display:block}
+    @media(max-width:1024px){.all-time-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:768px){.sidebar{transform:translateX(-100%);width:260px}.sidebar.open{transform:translateX(0)}.main-content{margin-left:0;padding:1rem}.all-time-grid{grid-template-columns:repeat(2,1fr)}.top-header{flex-direction:column;align-items:flex-start;gap:.5rem}.menu-btn{display:block}}
+    @media(max-width:480px){.all-time-grid{grid-template-columns:1fr 1fr;gap:.5rem}.stat-number{font-size:1.5rem}.all-time-grid .stat-card .number{font-size:1.2rem}}
+  </style>
+</head>
+<body>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="logo">BD UNIQUE METHOD</div>
+    <div class="subtitle">Fast OTP Provider</div>
+    <a class="nav-item active" data-page="dashboard"><i data-feather="grid"></i> Dashboard</a>
+    <a class="nav-item" data-page="get-number"><i data-feather="phone"></i> Get Number</a>
+    <a class="nav-item" data-page="success-otp"><i data-feather="check-circle"></i> Success OTP</a>
+    <a class="nav-item" data-page="live-console"><i data-feather="terminal"></i> Live Console</a>
+    <a class="nav-item" data-page="payment"><i data-feather="wallet"></i> Payment &amp; Wallet</a>
+    <div class="nav-section">Analytics</div>
+    <a class="nav-item" data-page="traffic"><i data-feather="bar-chart-2"></i> Traffic Analytics</a>
+    <a class="nav-item" data-page="live-access"><i data-feather="activity"></i> Live Access</a>
+    <div class="nav-section">Developer</div>
+    <a class="nav-item" data-page="api-docs"><i data-feather="code"></i> API Docs</a>
+    <div class="nav-section">Settings</div>
+    <a class="nav-item" data-page="profile"><i data-feather="user"></i> Profile</a>
+    <a class="nav-item" data-page="scissors"><i data-feather="scissors"></i> Scissors</a>
+    <a class="nav-item" data-page="bot"><i data-feather="bot"></i> Bot</a>
+  </aside>
+
+  <main class="main-content">
+    <header class="top-header">
+      <div class="flex items-center gap-3">
+        <button class="menu-btn" id="menuBtn"><i data-feather="menu"></i></button>
+        <div><h2 class="text-lg font-bold" id="pageTitle">Dashboard</h2><p class="text-xs text-text-muted" id="pageSubtitle">Welcome back! Here's your summary</p></div>
+      </div>
+      <div class="balance">Balance: <span id="headerBalance">$107.800</span></div>
+    </header>
+
+    <div id="page-dashboard" class="page-section active">
+      <section class="mb-6">
+        <h3 class="text-sm font-semibold text-text-secondary uppercase tracking-wider mb-3 flex items-center gap-2"><i data-feather="calendar" class="w-4 h-4"></i> Today's Statistics</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="card"><div class="stat-label">Number</div><div class="stat-number" id="todayNumber">58</div><p class="text-xs text-text-muted mt-0.5">Today</p></div>
+          <div class="card"><div class="stat-label">OTP</div><div class="stat-number" id="todayOtp">39</div><p class="text-xs text-text-muted mt-0.5">Today</p></div>
+          <div class="card"><div class="stat-label">Success</div><div class="stat-number text-[#06b6d4]" id="todaySuccess">67%</div><p class="text-xs text-text-muted mt-0.5">Today</p></div>
+        </div>
+      </section>
+      <section class="mb-6">
+        <h3 class="text-sm font-semibold text-text-secondary uppercase tracking-wider mb-3 flex items-center gap-2"><i data-feather="clock" class="w-4 h-4"></i> All-Time Statistics</h3>
+        <div class="all-time-grid">
+          <div class="stat-card"><div class="number" id="allNumbers">1115</div><div class="label">Numbers</div></div>
+          <div class="stat-card"><div class="number" id="allOtps">672</div><div class="label">OTPs</div></div>
+          <div class="stat-card"><div class="number text-[#06b6d4]" id="allSuccess">60%</div><div class="label">Success</div></div>
+          <div class="stat-card"><div class="number text-[#f59e0b]" id="allEarned">107.800</div><div class="label">Earned</div></div>
+        </div>
+      </section>
+      <section class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div class="card">
+          <div class="flex items-center justify-between mb-2"><span class="text-xs text-text-muted font-medium uppercase tracking-wider">Random Number</span><button id="panel1Copy" class="text-text-muted hover:text-[#06b6d4] transition text-sm flex items-center gap-1"><i data-feather="copy" class="w-3.5 h-3.5"></i> Copy</button></div>
+          <div class="text-center py-3"><div id="panel1Number" class="text-2xl sm:text-3xl font-bold font-mono tracking-wider text-[#06b6d4]">+8801712345678</div><p id="panel1Status" class="text-xs text-text-muted mt-1 flex items-center justify-center gap-2"><span class="w-2 h-2 rounded-full bg-[#06b6d4] animate-pulse"></span> Live</p></div>
+          <div class="flex gap-2"><button id="generateBtn" class="flex-1 bg-[#3b82f6] hover:bg-[#2563eb] text-white font-semibold py-1.5 px-3 rounded-lg text-sm transition flex items-center justify-center gap-1"><i data-feather="refresh-cw" class="w-3.5 h-3.5"></i> Generate</button><select id="countrySelect" class="bg-[#1a2236] border border-[#2a3a5a] text-text-primary rounded-lg px-2 py-1.5 text-sm flex-1"></select></div>
+        </div>
+        <div class="card">
+          <div class="flex items-center justify-between mb-2"><span class="text-xs text-text-muted font-medium uppercase tracking-wider">Manual Number</span><button id="panel2Copy" class="text-text-muted hover:text-[#06b6d4] transition text-sm flex items-center gap-1"><i data-feather="copy" class="w-3.5 h-3.5"></i> Copy</button></div>
+          <div class="text-center py-3"><div id="panel2Number" class="text-2xl sm:text-3xl font-bold font-mono tracking-wider text-text-secondary">Enter Number</div><p id="panel2Status" class="text-xs text-text-muted mt-1 flex items-center justify-center gap-2"><span class="w-2 h-2 rounded-full bg-[#3b82f6] animate-pulse"></span> Ready</p></div>
+          <div class="flex gap-2"><input id="panel2Input" type="text" placeholder="+8801712345678" class="flex-1 bg-[#1a2236] border border-[#2a3a5a] text-text-primary rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-[#3b82f6]"><button id="panel2Update" class="bg-[#3b82f6] hover:bg-[#2563eb] text-white font-semibold py-1.5 px-4 rounded-lg text-sm transition flex items-center gap-1"><i data-feather="check" class="w-3.5 h-3.5"></i> Set</button></div>
+        </div>
+      </section>
+      <section class="card">
+        <div class="flex items-center justify-between mb-3"><div><h3 class="text-sm font-semibold flex items-center gap-2"><i data-feather="inbox" class="w-4 h-4 text-[#3b82f6]"></i> Recent OTPs</h3><p class="text-xs text-text-muted">Live incoming messages</p></div><button id="refreshSmsBtn" class="text-text-muted hover:text-[#06b6d4] transition text-sm flex items-center gap-1"><i data-feather="refresh-cw" class="w-3.5 h-3.5"></i> Refresh</button></div>
+        <div id="smsStatus" class="text-center py-6 text-text-muted text-sm">Loading OTPs...</div>
+        <div class="table-wrap"><table><thead><tr><th>Time</th><th>Number</th><th class="hidden sm:table-cell">Service</th><th>Message</th><th class="text-center">OTP</th></tr></thead><tbody id="otpTableBody"></tbody></table></div>
+        <p id="smsError" class="text-red-400 text-center text-sm mt-3 hidden"></p>
+      </section>
+    </div>
+
+    <div id="page-get-number" class="page-section">
+      <div class="card text-center py-10"><i data-feather="phone" class="w-16 h-16 text-[#3b82f6] mx-auto mb-4"></i><h3 class="text-xl font-bold mb-2">Get a New Number</h3><p class="text-text-muted mb-4">Click the button below to reserve a new virtual number</p><button id="getNumberBtn" class="bg-[#3b82f6] hover:bg-[#2563eb] text-white font-semibold py-2 px-6 rounded-lg transition flex items-center gap-2 mx-auto"><i data-feather="phone" class="w-4 h-4"></i> Get Number</button><div id="getNumberResult" class="mt-4 text-sm"></div></div>
+    </div>
+
+    <div id="page-success-otp" class="page-section">
+      <div class="card"><h3 class="text-sm font-semibold flex items-center gap-2 mb-3"><i data-feather="check-circle" class="w-4 h-4 text-[#10b981]"></i> Successful OTPs</h3><div id="successOtpList" class="text-text-muted text-sm">Loading...</div></div>
+    </div>
+
+    <div id="page-live-console" class="page-section">
+      <div class="card"><h3 class="text-sm font-semibold flex items-center gap-2 mb-3"><i data-feather="terminal" class="w-4 h-4 text-[#06b6d4]"></i> Live Console</h3><div id="liveConsole" class="bg-[#0a0e1a] p-3 rounded-lg font-mono text-xs max-h-96 overflow-y-auto"><div class="text-text-muted">Waiting for events...</div></div></div>
+    </div>
+
+    <div id="page-payment" class="page-section">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="card"><h3 class="text-sm font-semibold flex items-center gap-2 mb-3"><i data-feather="wallet" class="w-4 h-4 text-[#f59e0b]"></i> Wallet</h3><div class="text-3xl font-bold text-[#06b6d4]" id="walletBalance">$0.000</div><p class="text-text-muted text-sm">Total Earned: <span id="walletTotalEarned">$0.000</span></p></div>
+        <div class="card"><h3 class="text-sm font-semibold flex items-center gap-2 mb-3"><i data-feather="list" class="w-4 h-4 text-[#3b82f6]"></i> Transactions</h3><div id="transactionList" class="text-sm text-text-muted">No transactions yet</div></div>
+      </div>
+    </div>
+
+    <div id="page-traffic" class="page-section"><div class="card text-center py-10"><i data-feather="bar-chart-2" class="w-16 h-16 text-[#3b82f6] mx-auto mb-4"></i><h3 class="text-xl font-bold">Traffic Analytics</h3><p class="text-text-muted">Coming soon — real-time traffic data</p></div></div>
+    <div id="page-live-access" class="page-section"><div class="card text-center py-10"><i data-feather="activity" class="w-16 h-16 text-[#06b6d4] mx-auto mb-4"></i><h3 class="text-xl font-bold">Live Access</h3><p class="text-text-muted">Coming soon — live user sessions</p></div></div>
+    <div id="page-api-docs" class="page-section"><div class="card"><h3 class="text-sm font-semibold flex items-center gap-2 mb-3"><i data-feather="code" class="w-4 h-4 text-[#3b82f6]"></i> API Documentation</h3><div class="text-sm text-text-muted space-y-2"><p><code class="bg-[#1a2236] px-2 py-0.5 rounded">GET /api/stats</code> — Get dashboard statistics</p><p><code class="bg-[#1a2236] px-2 py-0.5 rounded">GET /api/numbers</code> — List all numbers</p><p><code class="bg-[#1a2236] px-2 py-0.5 rounded">POST /api/get-number</code> — Reserve a new number</p><p><code class="bg-[#1a2236] px-2 py-0.5 rounded">GET /api/otps</code> — List all OTPs</p><p><code class="bg-[#1a2236] px-2 py-0.5 rounded">GET /api/success-otps</code> — List successful OTPs</p><p><code class="bg-[#1a2236] px-2 py-0.5 rounded">GET /api/wallet</code> — Get wallet info</p></div></div></div>
+    <div id="page-profile" class="page-section"><div class="card text-center py-10"><i data-feather="user" class="w-16 h-16 text-[#3b82f6] mx-auto mb-4"></i><h3 class="text-xl font-bold">Profile</h3><p class="text-text-muted">User profile settings coming soon</p></div></div>
+    <div id="page-scissors" class="page-section"><div class="card text-center py-10"><i data-feather="scissors" class="w-16 h-16 text-[#3b82f6] mx-auto mb-4"></i><h3 class="text-xl font-bold">Scissors</h3><p class="text-text-muted">Coming soon — link shortener tools</p></div></div>
+    <div id="page-bot" class="page-section"><div class="card text-center py-10"><i data-feather="bot" class="w-16 h-16 text-[#3b82f6] mx-auto mb-4"></i><h3 class="text-xl font-bold">Bot</h3><p class="text-text-muted">Telegram bot integration coming soon</p></div></div>
+  </main>
+
+  <script>
+    const API_BASE = window.location.origin;
+    let allNumbers = [], currentNumber = null, allOtps = [];
+    const $ = id => document.getElementById(id);
+    const countrySelect = $('countrySelect'), generateBtn = $('generateBtn'), refreshSmsBtn = $('refreshSmsBtn');
+    const panel1Number = $('panel1Number'), panel1Status = $('panel1Status'), panel1Copy = $('panel1Copy');
+    const panel2Number = $('panel2Number'), panel2Status = $('panel2Status'), panel2Input = $('panel2Input'), panel2Update = $('panel2Update'), panel2Copy = $('panel2Copy');
+    const otpTableBody = $('otpTableBody'), smsStatus = $('smsStatus'), smsError = $('smsError');
+    const todayNumber = $('todayNumber'), todayOtp = $('todayOtp'), todaySuccess = $('todaySuccess');
+    const allNumbersEl = $('allNumbers'), allOtpsEl = $('allOtps'), allSuccessEl = $('allSuccess'), allEarnedEl = $('allEarned'), headerBalance = $('headerBalance');
+
+    function getFlag(c){const m={'Venezuela':'🇻🇪','Pakistan':'🇵🇰','India':'🇮🇳','USA':'🇺🇸','Canada':'🇨🇦','UK':'🇬🇧','Brazil':'🇧🇷','Argentina':'🇦🇷','Colombia':'🇨🇴','Mexico':'🇲🇽','France':'🇫🇷','Germany':'🇩🇪','Spain':'🇪🇸','Italy':'🇮🇹','Russia':'🇷🇺','Japan':'🇯🇵','China':'🇨🇳','South Korea':'🇰🇷','Saudi Arabia':'🇸🇦','UAE':'🇦🇪','Egypt':'🇪🇬','Nigeria':'🇳🇬','South Africa':'🇿🇦','Australia':'🇦🇺','New Zealand':'🇳🇿','Indonesia':'🇮🇩','Malaysia':'🇲🇾','Philippines':'🇵🇭','Thailand':'🇹🇭','Vietnam':'🇻🇳','Turkey':'🇹🇷','Greece':'🇬🇷','Netherlands':'🇳🇱','Belgium':'🇧🇪','Switzerland':'🇨🇭','Sweden':'🇸🇪','Norway':'🇳🇴','Poland':'🇵🇱','Portugal':'🇵🇹','Ireland':'🇮🇪','Denmark':'🇩🇰','Finland':'🇫🇮','Austria':'🇦🇹','Czech Republic':'🇨🇿','Hungary':'🇭🇺'};return m[c]||'🌍';}
+    function maskNumber(n){if(!n||n.length<=7)return n||'N/A';return n.slice(0,4)+'••••'+n.slice(-3);}
+    function copyToClipboard(t,e){if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(()=>{if(e){const o=e.innerHTML;e.innerHTML='<i data-feather="check" class="w-3.5 h-3.5 text-[#06b6d4]"></i>';feather.replace();setTimeout(()=>{e.innerHTML=o;feather.replace();},1200);}}).catch(()=>fallbackCopy(t));}else{fallbackCopy(t);}}
+    function fallbackCopy(t){const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(ta);}
+    async function fetchAPI(e,o={}){try{const r=await fetch(`${API_BASE}${e}`,o);return await r.json();}catch(e){return{success:false,message:'Network error'};}}
+    async function loadStats(){const d=await fetchAPI('/api/stats');if(d.success){todayNumber.textContent=d.today.numbers;todayOtp.textContent=d.today.otps;todaySuccess.textContent=d.today.success;allNumbersEl.textContent=d.allTime.numbers;allOtpsEl.textContent=d.allTime.otps;allSuccessEl.textContent=d.allTime.success;allEarnedEl.textContent=d.allTime.earned.toFixed(3);headerBalance.textContent='$'+d.balance.toFixed(3);}}
+    async function loadNumbers(){const d=await fetchAPI('/api/numbers');if(d.success){allNumbers=d.numbers;const c=new Set();allNumbers.forEach(n=>c.add(n.country||'Unknown'));const s=Array.from(c).sort();countrySelect.innerHTML='<option value="random">🌍 All Countries</option>';s.forEach(c=>{countrySelect.innerHTML+=`<option value="${c}">${getFlag(c)} ${c}</option>`;});if(s.length)countrySelect.value=s[0];generateNumber();}}
+    function generateNumber(){const c=countrySelect.value;let p=c==='random'?allNumbers:allNumbers.filter(n=>(n.country||'Unknown')===c);if(p.length===0){panel1Number.textContent='❌ No numbers';panel1Status.innerHTML='<span class="w-2 h-2 rounded-full bg-red-400 animate-pulse"></span> No data';return;}const r=p[Math.floor(Math.random()*p.length)];currentNumber=r;const d=r.raw||r.e164||r.number||'N/A';panel1Number.textContent=d;panel1Status.innerHTML=`<span class="w-2 h-2 rounded-full bg-[#06b6d4] animate-pulse"></span> ${getFlag(r.country)} ${r.country||'Unknown'} • ${r.source||'API'}`;}
+    async function loadOtps(){refreshSmsBtn.disabled=true;otpTableBody.innerHTML='';smsStatus.textContent='Loading OTPs...';smsStatus.className='text-center py-6 text-text-muted text-sm';smsError.classList.add('hidden');const d=await fetchAPI('/api/otps');if(d.success){allOtps=d.otps;const l=allOtps.slice(0,15);if(l.length===0){smsStatus.textContent='No OTPs received yet.';refreshSmsBtn.disabled=false;return;}let h='';l.forEach(r=>{const p=r.number||'N/A',m=maskNumber(p),s=r.service||'Unknown',f=r.message||'',c=r.country||'Unknown',fl=getFlag(c),otpMatch=f.match(/(\b\d{3,8}\b)/),otpCode=otpMatch?otpMatch[0]:'—';h+=`<tr><td class="text-xs text-text-muted">${r.timestamp||''}</td><td class="text-xs font-mono"><span class="block text-[10px] text-text-muted">${fl} ${c}</span>${m}</td><td class="text-xs text-text-muted hidden sm:table-cell">${s}</td><td class="text-xs text-text-secondary max-w-[150px] truncate">${f.substring(0,50)}${f.length>50?'…':''}</td><td class="text-center"><span class="otp-badge">${otpCode}</span><button class="ml-1 text-text-muted hover:text-[#06b6d4] transition" onclick="copyToClipboard('${otpCode.replace(/'/g,"\\'")}', this)"><i data-feather="copy" class="w-3 h-3"></i></button></td></tr>`;});otpTableBody.innerHTML=h;feather.replace();smsStatus.className='hidden';}refreshSmsBtn.disabled=false;}
+    async function getNewNumber(){const r=document.getElementById('getNumberResult');r.innerHTML='<span class="text-text-muted">Reserving number...</span>';const d=await fetchAPI('/api/get-number',{method:'POST'});if(d.success){r.innerHTML=`<div class="bg-[#10b981]/10 border border-[#10b981]/20 rounded-lg p-3 text-[#10b981]">✅ Number reserved: <strong>${d.number}</strong> (${d.country})</div>`;loadNumbers();}else{r.innerHTML=`<div class="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400">❌ ${d.message}</div>`;}}
+    async function loadSuccessOtps(){const c=document.getElementById('successOtpList');c.innerHTML='Loading...';const d=await fetchAPI('/api/success-otps');if(d.success&&d.otps.length>0){let h='<div class="space-y-2">';d.otps.forEach(o=>{h+=`<div class="bg-[#1a2236] p-2 rounded-lg flex justify-between items-center text-sm"><span>${o.number}</span><span class="text-[#10b981] font-bold">${o.otp}</span><span class="text-text-muted text-xs">${o.service}</span></div>`;});h+='</div>';c.innerHTML=h;}else{c.innerHTML='No successful OTPs yet.';}}
+    async function loadWallet(){const d=await fetchAPI('/api/wallet');if(d.success){document.getElementById('walletBalance').textContent='$'+d.balance.toFixed(3);document.getElementById('walletTotalEarned').textContent='$'+d.totalEarned.toFixed(3);const l=document.getElementById('transactionList');if(d.transactions&&d.transactions.length>0){let h='';d.transactions.slice().reverse().forEach(t=>{h+=`<div class="flex justify-between items-center py-1 border-b border-white/5 text-sm"><span>${t.description}</span><span class="text-[#10b981]">+$${t.amount.toFixed(3)}</span></div>`;});l.innerHTML=h;}else{l.innerHTML='No transactions yet';}}}
+    async function loadLiveConsole(){const c=document.getElementById('liveConsole');c.innerHTML='<div class="text-text-muted">Loading...</div>';const d=await fetchAPI('/api/live-console');if(d.success&&d.otps.length>0){let h='';d.otps.forEach(o=>{const sc=o.status==='success'?'#10b981':'#f59e0b';h+=`<div class="flex justify-between items-center py-1 border-b border-white/5 text-xs"><span>${o.timestamp||''}</span><span>${o.number}</span><span style="color:${sc}">${o.otp}</span><span class="text-text-muted">${o.service}</span><span class="text-${o.status==='success'?'green':'yellow'}-400">${o.status}</span></div>`;});c.innerHTML=h;}else{c.innerHTML='<div class="text-text-muted">No live events</div>';}}
+
+    panel2Update.addEventListener('click',()=>{const n=panel2Input.value.trim();if(n){panel2Number.textContent=n;panel2Status.innerHTML='<span class="w-2 h-2 rounded-full bg-[#3b82f6] animate-pulse"></span> Manual • Updated';panel2Input.value='';}});
+    panel2Input.addEventListener('keydown',(e)=>{if(e.key==='Enter')panel2Update.click();});
+    panel1Copy.addEventListener('click',()=>{if(currentNumber){const n=currentNumber.raw||currentNumber.e164||currentNumber.number||'';if(n)copyToClipboard(n,panel1Copy);}});
+    panel2Copy.addEventListener('click',()=>{const n=panel2Number.textContent;if(n&&n!=='Enter Number'){copyToClipboard(n,panel2Copy);}});
+
+    document.querySelectorAll('.nav-item').forEach(item=>{item.addEventListener('click',function(e){e.preventDefault();document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));this.classList.add('active');const p=this.dataset.page;document.querySelectorAll('.page-section').forEach(ps=>ps.classList.remove('active'));const t=document.getElementById('page-'+p);if(t)t.classList.add('active');const titles={'dashboard':['Dashboard','Welcome back! Here\'s your summary'],'get-number':['Get Number','Reserve a new virtual number'],'success-otp':['Success OTP','View all successful OTPs'],'live-console':['Live Console','Real-time OTP events'],'payment':['Payment & Wallet','Your earnings and transactions'],'traffic':['Traffic Analytics','Coming soon'],'live-access':['Live Access','Coming soon'],'api-docs':['API Docs','Developer documentation'],'profile':['Profile','User settings'],'scissors':['Scissors','Coming soon'],'bot':['Bot','Coming soon']};const info=titles[p]||['Page',''];document.getElementById('pageTitle').textContent=info[0];document.getElementById('pageSubtitle').textContent=info[1];if(p==='success-otp')loadSuccessOtps();if(p==='live-console')loadLiveConsole();if(p==='payment')loadWallet();if(window.innerWidth<=768){document.getElementById('sidebar').classList.remove('open');}});});
+
+    document.getElementById('menuBtn').addEventListener('click',()=>{document.getElementById('sidebar').classList.toggle('open');});
+    document.addEventListener('click',(e)=>{const s=document.getElementById('sidebar'),m=document.getElementById('menuBtn');if(window.innerWidth<=768&&!s.contains(e.target)&&!m.contains(e.target)){s.classList.remove('open');}});
+
+    document.addEventListener('DOMContentLoaded',()=>{feather.replace();loadStats();loadNumbers();loadOtps();generateBtn.addEventListener('click',generateNumber);refreshSmsBtn.addEventListener('click',loadOtps);countrySelect.addEventListener('change',generateNumber);document.getElementById('getNumberBtn').addEventListener('click',getNewNumber);setInterval(()=>{loadStats();loadOtps();},30000);});
+  </script>
+</body>
+</html>
