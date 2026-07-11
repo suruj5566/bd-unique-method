@@ -12,9 +12,9 @@ app.use(bodyParser.json());
 app.use(express.static('.'));
 
 // ================================================================
-//  টেলিগ্রাম বট টোকেন (আপনার টোকেন দিন)
+//  টেলিগ্রাম বট টোকেন (আপনার টোকেন)
 // ================================================================
-const TELEGRAM_BOT_TOKEN = 'YOUR_BOT_TOKEN'; // ← এখানে আপনার টোকেন দিন
+const TELEGRAM_BOT_TOKEN = '8806967153:AAFE7X5CS_t7o4FvzuU4x5qK_emgRok6GW0';
 const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
 
 // ================================================================
