@@ -3,24 +3,15 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const { MongoClient } = require('mongodb');
 const { v4: uuidv4 } = require('uuid');
+const puppeteer = require('puppeteer');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ================================================================
-//  MIDDLEWARE
-// ================================================================
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static('.'));
-
-// JSON রেসপন্স ফোর্স করুন
-app.use((req, res, next) => {
-  if (req.path.startsWith('/api/')) {
-    res.setHeader('Content-Type', 'application/json');
-  }
-  next();
-});
 
 // ================================================================
 //  কনফিগারেশন
@@ -28,13 +19,18 @@ app.use((req, res, next) => {
 const TELEGRAM_BOT_TOKEN = '8806967153:AAFE7X5CS_t7o4FvzuU4x5qK_emgRok6GW0';
 const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
 
-// ✅ এখানে আপনার FASTX API Key ও Base URL আপডেট করা আছে
 const FASTX_API_KEY = 'MURAD_CB2D9D7650B867595C3AE975';
 const FASTX_BASE = 'https://fastxotps.com/api/v1';
 
 const MONGODB_URI = 'mongodb+srv://surujsarkar01_db_user:hSiXnPCwFKWeChNm@cluster0.uovzwiy.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
 const DB_NAME = 'bd_unique_method';
 let db, numbersCollection, otpsCollection, usersCollection;
+
+// Proxy List (আপনার নিজের প্রোক্সি যোগ করুন)
+const PROXY_LIST = [
+  // 'http://user:pass@proxy1:port',
+  // 'http://user:pass@proxy2:port',
+];
 
 // ================================================================
 //  MongoDB সংযোগ
@@ -66,7 +62,7 @@ async function connectDB() {
 }
 
 // ================================================================
-//  টেলিগ্রাম মেসেজ
+//  টেলিগ্রাম ফাংশন
 // ================================================================
 async function sendTelegramMessage(chatId, text, extra = {}) {
   try {
@@ -81,7 +77,7 @@ async function sendTelegramMessage(chatId, text, extra = {}) {
 }
 
 // ================================================================
-//  FAST X OTP API কল (হ্যান্ডলার)
+//  FAST X OTP API (বিদ্যমান)
 // ================================================================
 async function callFastXAPI(endpoint, options = {}) {
   const url = `${FASTX_BASE}${endpoint}`;
@@ -99,20 +95,94 @@ async function callFastXAPI(endpoint, options = {}) {
     try {
       return JSON.parse(text);
     } catch (e) {
-      console.error('FASTX JSON Parse Error:', text.substring(0, 200));
-      return { ok: false, message: 'Invalid JSON response', raw: text.substring(0, 200) };
+      return { ok: false, message: 'Invalid JSON response' };
     }
   } catch (error) {
-    console.error('FASTX API Error:', error);
     return { ok: false, message: error.message };
   }
 }
 
 // ================================================================
-//  API রাউটস
+//  BULK FORGOT PASSWORD (নতুন ফিচার)
 // ================================================================
+async function forgotPasswordWithPuppeteer(identifier, proxy = null) {
+  const args = ['--no-sandbox', '--disable-setuid-sandbox'];
+  if (proxy) args.push(`--proxy-server=${proxy}`);
+  
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: args
+  });
+  
+  try {
+    const page = await browser.newPage();
+    await page.goto('https://www.facebook.com/login/identify/', { 
+      waitUntil: 'networkidle2',
+      timeout: 30000 
+    });
+    
+    await page.type('input[name="email"]', identifier);
+    await page.click('button[type="submit"]');
+    await page.waitForTimeout(3000);
+    
+    const url = page.url();
+    if (url.includes('confirm')) {
+      return { success: true, message: 'OTP পাঠানো হয়েছে' };
+    } else {
+      return { success: false, message: 'ব্যর্থ হয়েছে' };
+    }
+  } catch (error) {
+    return { success: false, message: error.message };
+  } finally {
+    await browser.close();
+  }
+}
 
-// 1. Get Number
+// Bulk Forgot API
+app.post('/api/bulk-forgot', async (req, res) => {
+  try {
+    const { numbers } = req.body;
+    if (!numbers || !Array.isArray(numbers) || numbers.length === 0) {
+      return res.json({ success: false, message: 'কোনো নাম্বার নেই' });
+    }
+    
+    const results = [];
+    for (let i = 0; i < numbers.length; i++) {
+      const proxy = PROXY_LIST.length > 0 ? PROXY_LIST[i % PROXY_LIST.length] : null;
+      const result = await forgotPasswordWithPuppeteer(numbers[i], proxy);
+      results.push({
+        identifier: numbers[i],
+        success: result.success,
+        message: result.message
+      });
+      
+      // ৩ সেকেন্ড বিরতি (IP ব্লক এড়াতে)
+      await new Promise(resolve => setTimeout(resolve, 3000));
+    }
+    
+    // রেজাল্ট JSON ফাইলে সেভ করুন
+    fs.writeFileSync('results.json', JSON.stringify(results, null, 2));
+    
+    return res.json({ success: true, results });
+  } catch (error) {
+    return res.json({ success: false, message: error.message });
+  }
+});
+
+// Bulk Forgot Status
+app.get('/api/bulk-forgot-status', (req, res) => {
+  try {
+    const data = fs.readFileSync('results.json', 'utf8');
+    const results = JSON.parse(data);
+    return res.json({ success: true, results });
+  } catch {
+    return res.json({ success: true, results: [] });
+  }
+});
+
+// ================================================================
+//  বিদ্যমান API রাউটস
+// ================================================================
 app.post('/api/fastx/get-number', async (req, res) => {
   try {
     const { range } = req.body;
@@ -138,18 +208,13 @@ app.post('/api/fastx/get-number', async (req, res) => {
       await usersCollection.updateOne({}, { $inc: { totalNumbers: 1 } });
       return res.json({ success: true, number: data.data });
     } else {
-      return res.json({ 
-        success: false, 
-        message: data?.message || 'নাম্বার পাওয়া যায়নি'
-      });
+      return res.json({ success: false, message: data?.message || 'নাম্বার পাওয়া যায়নি' });
     }
   } catch (error) {
-    console.error('Get Number Error:', error);
     return res.json({ success: false, message: error.message });
   }
 });
 
-// 2. Check OTP
 app.get('/api/fastx/check-otp', async (req, res) => {
   try {
     const { number } = req.query;
@@ -176,12 +241,10 @@ app.get('/api/fastx/check-otp', async (req, res) => {
       return res.json({ success: false, message: data?.message || 'No OTP found' });
     }
   } catch (error) {
-    console.error('Check OTP Error:', error);
     return res.json({ success: false, message: error.message });
   }
 });
 
-// 3. Stats
 app.get('/api/stats', async (req, res) => {
   try {
     const user = await usersCollection.findOne({});
@@ -204,34 +267,28 @@ app.get('/api/stats', async (req, res) => {
       referBalance: user?.referBalance || 0
     });
   } catch (error) {
-    console.error('Stats Error:', error);
     return res.json({ success: false, message: error.message });
   }
 });
 
-// 4. OTPs
 app.get('/api/otps', async (req, res) => {
   try {
     const otps = await otpsCollection.find({}).sort({ timestamp: -1 }).toArray();
     return res.json({ success: true, otps });
   } catch (error) {
-    console.error('OTPs Error:', error);
     return res.json({ success: false, message: error.message });
   }
 });
 
-// 5. Numbers
 app.get('/api/numbers', async (req, res) => {
   try {
     const numbers = await numbersCollection.find({}).toArray();
     return res.json({ success: true, numbers });
   } catch (error) {
-    console.error('Numbers Error:', error);
     return res.json({ success: false, message: error.message });
   }
 });
 
-// 6. Withdraw
 app.post('/api/withdraw', async (req, res) => {
   try {
     const { amount, method } = req.body;
@@ -245,7 +302,6 @@ app.post('/api/withdraw', async (req, res) => {
     await usersCollection.updateOne({}, { $inc: { balance: -amount } });
     return res.json({ success: true, message: `Withdraw $${amount} via ${method} successful` });
   } catch (error) {
-    console.error('Withdraw Error:', error);
     return res.json({ success: false, message: error.message });
   }
 });
@@ -350,39 +406,6 @@ app.post('/api/telegram-webhook', async (req, res) => {
     const chatId = message.chat.id;
     const text = message.text || '';
 
-    // রেঞ্জ চেক
-    if (text.match(/^\d{4,10}X{0,3}$/)) {
-      const range = text.trim();
-      try {
-        const data = await callFastXAPI('/user/getnum', {
-          method: 'POST',
-          body: JSON.stringify({ range, is_national: false, remove_plus: false })
-        });
-        if (data.ok !== false && data.data) {
-          const number = data.data?.number || data.data?.copy || 'N/A';
-          await numbersCollection.insertOne({
-            id: number,
-            number: number,
-            country: data.data?.country || 'Unknown',
-            status: 'assigned',
-            source: 'fastxotps',
-            assignedTo: 'telegram_' + chatId,
-            createdAt: new Date()
-          });
-          await usersCollection.updateOne({}, { $inc: { totalNumbers: 1 } });
-          await sendTelegramMessage(chatId,
-            `✅ **নাম্বার প্রোভিশন হয়েছে!**\n\n📞 নাম্বার: ${number}\n🌍 দেশ: ${data.data?.country || 'Unknown'}`
-          );
-        } else {
-          await sendTelegramMessage(chatId, `❌ ${data?.message || 'নাম্বার পাওয়া যায়নি'}`);
-        }
-      } catch (error) {
-        await sendTelegramMessage(chatId, `❌ Error: ${error.message}`);
-      }
-      return res.sendStatus(200);
-    }
-
-    // কমান্ড
     if (text === '/start') {
       await sendTelegramMessage(chatId, `👋 **BD UNIQUE METHOD** বটে স্বাগতম!`, mainMenu);
     } else {
