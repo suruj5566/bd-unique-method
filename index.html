@@ -1,304 +1,101 @@
-<!DOCTYPE html>
-<html lang="bn">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BD UNIQUE METHOD — Dashboard</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box}
-    :root{--bg-primary:#0b0f1a;--bg-card:#111827;--bg-card-hover:#1a2236;--accent-gradient:linear-gradient(135deg,#f59e0b,#fbbf24);--text-primary:#f1f5f9;--text-secondary:#94a3b8;--text-muted:#475569;--radius:16px;--radius-sm:10px}
-    body{background:var(--bg-primary);color:var(--text-primary);font-family:'Inter',sans-serif;min-height:100vh;background-image:radial-gradient(ellipse at 30% 20%,rgba(245,158,11,0.03),transparent 60%)}
-    ::-webkit-scrollbar{width:4px}
-    ::-webkit-scrollbar-track{background:var(--bg-primary)}
-    ::-webkit-scrollbar-thumb{background:#f59e0b;border-radius:10px}
-    .glass-card{background:var(--bg-card);border:1px solid rgba(245,158,11,0.06);border-radius:var(--radius);padding:1.5rem;transition:all .3s ease}
-    .glass-card:hover{background:var(--bg-card-hover);border-color:rgba(245,158,11,0.12);transform:translateY(-2px)}
-    .gradient-text{background:var(--accent-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-size:200% 200%;animation:shimmer 3s ease-in-out infinite}
-    @keyframes shimmer{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
-    .btn-gold{background:linear-gradient(135deg,#f59e0b,#d97706);color:#0b0f1a;font-weight:700;padding:10px 24px;border:none;border-radius:var(--radius-sm);cursor:pointer;transition:all .25s ease;display:inline-flex;align-items:center;gap:8px;font-size:.9rem}
-    .btn-gold:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 0 40px -4px rgba(245,158,11,0.25)}
-    .btn-outline{background:transparent;border:1.5px solid rgba(245,158,11,0.15);color:var(--text-primary);padding:10px 20px;border-radius:var(--radius-sm);cursor:pointer;transition:all .25s ease;display:inline-flex;align-items:center;gap:8px;font-size:.9rem}
-    .btn-outline:hover{border-color:#f59e0b;background:rgba(245,158,11,0.04)}
-    .input-dark{background:rgba(255,255,255,0.03);border:1.5px solid rgba(255,255,255,0.04);color:var(--text-primary);padding:12px 16px;border-radius:var(--radius-sm);width:100%;transition:all .3s ease;font-size:.9rem}
-    .input-dark:focus{outline:none;border-color:#f59e0b;box-shadow:0 0 30px -8px rgba(245,158,11,0.06);background:rgba(255,255,255,0.05)}
-    .input-dark::placeholder{color:var(--text-muted)}
-    .number-hero{font-family:'Inter',sans-serif;font-weight:800;font-size:2.5rem;letter-spacing:2px;background:var(--accent-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;word-break:break-all}
-    .stat-number{font-size:1.8rem;font-weight:800;color:var(--text-primary)}
-    .stat-label{font-size:.65rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);font-weight:600}
-    .otp-item{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);border-radius:var(--radius-sm);padding:.8rem 1rem;margin-bottom:.5rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;transition:all .2s}
-    .otp-item:hover{background:rgba(255,255,255,0.04);border-color:rgba(245,158,11,0.06)}
-    .otp-code{background:rgba(245,158,11,0.06);color:#f59e0b;font-weight:700;padding:.1rem .8rem;border-radius:8px;border:1px solid rgba(245,158,11,0.06);min-width:70px;text-align:center}
-    .tab-btn{padding:.5rem 1.2rem;border-radius:var(--radius-sm);background:transparent;border:1px solid transparent;color:var(--text-muted);cursor:pointer;transition:all .2s;font-size:.85rem}
-    .tab-btn.active{background:rgba(245,158,11,0.06);border-color:rgba(245,158,11,0.06);color:#f59e0b}
-    .tab-btn:hover{color:var(--text-primary)}
-    .page-section{display:none}
-    .page-section.active{display:block}
-    @media(max-width:640px){.number-hero{font-size:1.8rem}.stat-number{font-size:1.3rem}.glass-card{padding:1.2rem}}
-  </style>
-</head>
-<body>
-
-<div class="max-w-7xl mx-auto px-4 sm:px-6 py-5 space-y-6">
-
-  <!-- HEADER -->
-  <header class="glass-card flex items-center justify-between">
-    <div>
-      <h1 class="text-2xl font-black"><span class="gradient-text">BD UNIQUE METHOD</span></h1>
-      <p class="text-xs text-text-muted tracking-widest uppercase font-medium">OTP Management Platform</p>
-    </div>
-    <div class="flex items-center gap-3">
-      <span class="text-sm text-text-muted">Balance:</span>
-      <span class="text-sm font-bold text-[#f59e0b]" id="headerBalance">$0.000</span>
-    </div>
-  </header>
-
-  <!-- TAB NAVIGATION -->
-  <div class="flex flex-wrap gap-2 border-b border-white/5 pb-3">
-    <button class="tab-btn active" data-page="dashboard">📊 Dashboard</button>
-    <button class="tab-btn" data-page="getnumber">📱 Get Number</button>
-    <button class="tab-btn" data-page="liveconsole">📨 Live Console</button>
-    <button class="tab-btn" data-page="profile">👤 Profile</button>
-    <button class="tab-btn" data-page="payment">💳 Payment</button>
-  </div>
-
-  <!-- DASHBOARD -->
-  <div id="page-dashboard" class="page-section active">
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-      <div class="glass-card"><div class="stat-label">Numbers</div><div class="stat-number" id="statNumbers">0</div></div>
-      <div class="glass-card"><div class="stat-label">OTPs</div><div class="stat-number" id="statOtps">0</div></div>
-      <div class="glass-card"><div class="stat-label">Success</div><div class="stat-number text-[#10b981]" id="statSuccess">0%</div></div>
-      <div class="glass-card"><div class="stat-label">Earned</div><div class="stat-number text-[#f59e0b]" id="statEarned">0.000</div></div>
-    </div>
-    <div class="glass-card">
-      <h3 class="text-sm font-semibold text-text-secondary uppercase tracking-wider mb-3">📈 Recent OTPs</h3>
-      <div id="otpList" class="space-y-2"><p class="text-text-muted text-sm text-center py-4">Loading...</p></div>
-    </div>
-  </div>
-
-  <!-- GET NUMBER -->
-  <div id="page-getnumber" class="page-section">
-    <div class="glass-card">
-      <h2 class="text-lg font-bold flex items-center gap-2 mb-4"><i data-feather="phone" class="text-[#f59e0b]"></i> Get Number</h2>
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <input id="rangeInput" type="text" placeholder="রেঞ্জ (যেমন: 4473845XXX)" class="input-dark" value="4473845XXX">
-        <button id="getNumberBtn" class="btn-gold justify-center"><i data-feather="refresh-cw" class="w-4 h-4"></i> Get Number</button>
-        <button id="checkOtpBtn" class="btn-outline justify-center"><i data-feather="search" class="w-4 h-4"></i> Check OTP</button>
-      </div>
-      <div id="numberResult" class="mt-4 p-4 bg-[#0a0e1a] rounded-xl text-center">
-        <p class="text-text-muted text-sm">এখানে নাম্বার দেখাবে</p>
-        <div id="displayNumber" class="number-hero text-3xl mt-2">—</div>
-        <p id="numberStatus" class="text-xs text-text-muted mt-1"></p>
-      </div>
-    </div>
-  </div>
-
-  <!-- LIVE CONSOLE -->
-  <div id="page-liveconsole" class="page-section">
-    <div class="glass-card">
-      <h2 class="text-lg font-bold flex items-center gap-2 mb-4"><i data-feather="activity" class="text-[#f59e0b]"></i> Live Console</h2>
-      <div id="liveStream" class="space-y-2 max-h-96 overflow-y-auto">
-        <p class="text-text-muted text-sm text-center py-4">Loading live stream...</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- PROFILE -->
-  <div id="page-profile" class="page-section">
-    <div class="glass-card">
-      <h2 class="text-lg font-bold flex items-center gap-2 mb-4"><i data-feather="user" class="text-[#f59e0b]"></i> Profile</h2>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div><p class="text-xs text-text-muted">Balance</p><p class="text-sm font-bold text-[#f59e0b]" id="profileBalance">$0.000</p></div>
-        <div><p class="text-xs text-text-muted">Total OTPs</p><p class="text-sm" id="profileOtps">0</p></div>
-        <div><p class="text-xs text-text-muted">Refer Balance</p><p class="text-sm text-[#10b981]" id="profileRefer">$0.000</p></div>
-        <div><p class="text-xs text-text-muted">API Key Status</p><p class="text-sm text-[#10b981]">✔ Active</p></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- PAYMENT -->
-  <div id="page-payment" class="page-section">
-    <div class="glass-card">
-      <h2 class="text-lg font-bold flex items-center gap-2 mb-4"><i data-feather="credit-card" class="text-[#f59e0b]"></i> Payment</h2>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div><p class="text-xs text-text-muted">Available Balance</p><p class="text-3xl font-bold text-[#f59e0b]" id="paymentBalance">$0.000</p></div>
-        <div>
-          <p class="text-xs text-text-muted">Withdraw Method</p>
-          <select id="withdrawMethod" class="input-dark text-sm">
-            <option value="bkash">bKash</option>
-            <option value="nagad">Nagad</option>
-            <option value="binance">Binance (USDT)</option>
-          </select>
-          <button id="withdrawBtn" class="btn-gold w-full mt-2"><i data-feather="send" class="w-4 h-4"></i> Withdraw</button>
-          <p id="withdrawResult" class="text-xs text-text-muted mt-2"></p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-</div>
-
-<script>
-  const API_BASE = window.location.origin;
-
-  // TAB NAVIGATION
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
-      document.getElementById('page-' + btn.dataset.page).classList.add('active');
-      if (btn.dataset.page === 'liveconsole') loadLiveConsole();
-      if (btn.dataset.page === 'profile') loadProfile();
-      if (btn.dataset.page === 'payment') loadPayment();
-    });
-  });
-
-  // LOAD STATS
-  async function loadStats() {
-    try {
-      const res = await fetch(`${API_BASE}/api/stats`);
-      const data = await res.json();
-      if (data.success) {
-        document.getElementById('statNumbers').textContent = data.allTime.numbers;
-        document.getElementById('statOtps').textContent = data.allTime.otps;
-        document.getElementById('statSuccess').textContent = data.allTime.success;
-        document.getElementById('statEarned').textContent = data.allTime.earned.toFixed(3);
-        document.getElementById('headerBalance').textContent = '$' + data.balance.toFixed(3);
-        document.getElementById('profileBalance').textContent = '$' + data.balance.toFixed(3);
-        document.getElementById('profileOtps').textContent = data.allTime.otps;
-        document.getElementById('profileRefer').textContent = '$' + (data.referBalance || 0).toFixed(3);
-        document.getElementById('paymentBalance').textContent = '$' + data.balance.toFixed(3);
-      }
-    } catch (e) { console.error('Stats error:', e); }
-  }
-
-  // LOAD OTPs
-  async function loadOtps() {
-    try {
-      const res = await fetch(`${API_BASE}/api/otps`);
-      const data = await res.json();
-      const container = document.getElementById('otpList');
-      if (data.success && data.otps.length > 0) {
-        container.innerHTML = data.otps.slice(0, 10).map(o => `
-          <div class="flex items-center justify-between text-sm p-2 bg-white/5 rounded-lg">
-            <span class="font-mono">${o.number || 'N/A'}</span>
-            <span class="text-[#f59e0b]">${o.otp || '—'}</span>
-            <span class="text-text-muted text-xs">${o.service || 'Unknown'}</span>
-            <span class="${o.status === 'success' ? 'text-[#10b981]' : 'text-yellow-400'}">${o.status || ''}</span>
-          </div>
-        `).join('');
-      } else {
-        container.innerHTML = '<p class="text-text-muted text-sm text-center py-4">No OTPs found</p>';
-      }
-    } catch (e) { console.error('OTPs error:', e); }
-  }
-
-  // GET NUMBER
-  document.getElementById('getNumberBtn').addEventListener('click', async () => {
-    const range = document.getElementById('rangeInput').value.trim() || '4473845XXX';
-    const display = document.getElementById('displayNumber');
-    const status = document.getElementById('numberStatus');
-    display.textContent = '⏳';
-    status.textContent = 'নাম্বার নেওয়া হচ্ছে...';
-    try {
-      const res = await fetch(`${API_BASE}/api/fastx/get-number`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ range })
+// ================================================================
+//  LIVE CONSOLE — সম্পূর্ণ আপডেট
+// ================================================================
+async function loadLiveConsole() {
+  try {
+    const res = await fetch(`${API_BASE}/api/otps`);
+    const data = await res.json();
+    
+    if (data.success && data.otps) {
+      const otps = data.otps;
+      
+      // মোট OTP
+      document.getElementById('liveTotal').textContent = otps.length;
+      
+      // প্ল্যাটফর্ম অনুযায়ী কাউন্ট
+      const facebook = otps.filter(o => o.service?.toLowerCase().includes('facebook')).length;
+      const whatsapp = otps.filter(o => o.service?.toLowerCase().includes('whatsapp')).length;
+      const others = otps.length - facebook - whatsapp;
+      
+      document.getElementById('liveFacebook').textContent = facebook;
+      document.getElementById('liveWhatsApp').textContent = whatsapp;
+      document.getElementById('liveOthers').textContent = others;
+      
+      // ============================================================
+      //  নেটওয়ার্ক ডিস্ট্রিবিউশন (ক্যারিয়ার পারফরম্যান্স)
+      // ============================================================
+      const carrierMap = {};
+      otps.forEach(o => {
+        const carrier = o.operator || o.carrier || 'Unknown';
+        carrierMap[carrier] = (carrierMap[carrier] || 0) + 1;
       });
-      const data = await res.json();
-      if (data.success) {
-        display.textContent = data.number?.number || 'N/A';
-        status.textContent = `✅ ${data.number?.country || 'Unknown'}`;
-        loadStats();
-        loadOtps();
+      
+      const total = otps.length;
+      const carrierContainer = document.getElementById('networkDistribution');
+      
+      if (Object.keys(carrierMap).length > 0) {
+        const sortedCarriers = Object.entries(carrierMap).sort((a, b) => b[1] - a[1]);
+        let carrierHtml = `<div class="flex items-center justify-between text-sm text-text-muted mb-1">
+          <span>Total: <strong class="text-white">${total}</strong></span>
+        </div>`;
+        
+        sortedCarriers.forEach(([carrier, count]) => {
+          const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
+          const barColor = percentage > 50 ? 'bg-[#10b981]' : percentage > 20 ? 'bg-[#f59e0b]' : 'bg-[#3b82f6]';
+          carrierHtml += `
+            <div class="flex items-center gap-2 text-sm">
+              <span class="w-24 text-text-muted truncate">${carrier}</span>
+              <div class="flex-1 bg-[#1a2236] rounded-full h-2">
+                <div class="${barColor} h-2 rounded-full" style="width: ${percentage}%"></div>
+              </div>
+              <span class="text-text-muted text-xs w-12 text-right">${count} (${percentage}%)</span>
+            </div>
+          `;
+        });
+        carrierContainer.innerHTML = carrierHtml;
       } else {
-        display.textContent = '❌';
-        status.textContent = data.message || 'ব্যর্থ!';
+        carrierContainer.innerHTML = '<p class="text-text-muted text-sm">No carrier data available</p>';
       }
-    } catch (e) {
-      display.textContent = '⚠️';
-      status.textContent = 'Error: ' + e.message;
+      
+      // ============================================================
+      //  লাইভ স্ট্রিম (সর্বশেষ OTP)
+      // ============================================================
+      const streamContainer = document.getElementById('liveStream');
+      const latest = otps.slice(0, 30);
+      
+      if (latest.length > 0) {
+        streamContainer.innerHTML = latest.map(o => {
+          const time = o.timestamp ? new Date(o.timestamp).toLocaleTimeString() : '--:--:--';
+          const country = o.country || 'Unknown';
+          const number = o.number || 'N/A';
+          const otp = o.otp || '••••••';
+          const service = o.service || 'Unknown';
+          const status = o.status === 'success' ? '✅' : '⏳';
+          
+          return `
+            <div class="flex items-center justify-between text-sm p-2 bg-white/5 rounded-lg hover:bg-white/10 transition">
+              <div class="flex items-center gap-3 flex-1">
+                <span class="text-text-muted text-xs w-16">${time}</span>
+                <span class="text-text-muted text-xs w-20 truncate">${country}</span>
+                <span class="text-[#3b82f6] text-xs w-16 truncate">${service}</span>
+                <span class="font-mono text-xs w-24 truncate">${number}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-[#f59e0b] font-mono text-sm">${otp}</span>
+                <span class="text-xs">${status}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } else {
+        streamContainer.innerHTML = '<p class="text-text-muted text-sm text-center py-4">No OTPs received yet</p>';
+      }
     }
-  });
-
-  document.getElementById('checkOtpBtn').addEventListener('click', async () => {
-    const number = document.getElementById('rangeInput').value.trim();
-    if (!number) { alert('দয়া করে একটি নাম্বার দিন!'); return; }
-    try {
-      const res = await fetch(`${API_BASE}/api/fastx/check-otp?number=${number}`);
-      const data = await res.json();
-      if (data.success && data.otp) {
-        alert(`📱 ${data.otp.nomor}\n📊 স্ট্যাটাস: ${data.otp.status}\n🔑 OTP: ${data.otp.kode_otp || 'পাওয়া যায়নি'}`);
-        loadOtps();
-      } else {
-        alert(data.message || 'কোনো তথ্য পাওয়া যায়নি');
-      }
-    } catch (e) { alert('Error: ' + e.message); }
-  });
-
-  // LIVE CONSOLE
-  async function loadLiveConsole() {
-    try {
-      const res = await fetch(`${API_BASE}/api/otps`);
-      const data = await res.json();
-      const container = document.getElementById('liveStream');
-      if (data.success && data.otps.length > 0) {
-        container.innerHTML = data.otps.slice(0, 20).map(o => `
-          <div class="flex items-center justify-between text-sm p-2 bg-white/5 rounded-lg">
-            <span class="font-mono">${o.number || 'N/A'}</span>
-            <span class="text-[#f59e0b]">${o.otp || '—'}</span>
-            <span class="text-text-muted text-xs">${o.service || 'Unknown'}</span>
-            <span class="${o.status === 'success' ? 'text-[#10b981]' : 'text-yellow-400'}">${o.status || ''}</span>
-          </div>
-        `).join('');
-      } else {
-        container.innerHTML = '<p class="text-text-muted text-sm text-center py-4">No live OTPs</p>';
-      }
-    } catch (e) { console.error('Live console error:', e); }
+  } catch (error) {
+    console.error('Live Console Error:', error);
+    document.getElementById('liveStream').innerHTML = '<p class="text-red-400 text-sm text-center py-4">Error loading live stream</p>';
   }
+}
 
-  // PROFILE & PAYMENT
-  async function loadProfile() { loadStats(); }
-  async function loadPayment() { loadStats(); }
-
-  // WITHDRAW
-  document.getElementById('withdrawBtn').addEventListener('click', async () => {
-    const method = document.getElementById('withdrawMethod').value;
-    const result = document.getElementById('withdrawResult');
-    result.innerHTML = '⏳ Processing...';
-    try {
-      const res = await fetch(`${API_BASE}/api/withdraw`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: 1, method })
-      });
-      const data = await res.json();
-      if (data.success) {
-        result.innerHTML = `<span class="text-[#10b981]">✅ ${data.message}</span>`;
-        loadStats();
-      } else {
-        result.innerHTML = `<span class="text-red-400">❌ ${data.message}</span>`;
-      }
-    } catch (e) {
-      result.innerHTML = `<span class="text-red-400">Error: ${e.message}</span>`;
-    }
-  });
-
-  // INIT
-  document.addEventListener('DOMContentLoaded', () => {
-    feather.replace();
-    loadStats();
-    loadOtps();
-    setInterval(loadStats, 30000);
-    setInterval(loadOtps, 15000);
-  });
-</script>
-
-</body>
-</html>
+// অটো রিফ্রেশ (প্রতি ১০ সেকেন্ড)
+setInterval(loadLiveConsole, 10000);
