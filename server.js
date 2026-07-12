@@ -3,6 +3,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const { MongoClient } = require('mongodb');
 const { v4: uuidv4 } = require('uuid');
+const axios = require('axios');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -18,11 +19,17 @@ const TELEGRAM_BOT_TOKEN = '8806967153:AAFE7X5CS_t7o4FvzuU4x5qK_emgRok6GW0';
 const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
 
 // ================================================================
+//  DGDNETWORK API
+// ================================================================
+const DGD_API_KEY = 'dgd_4128cad69ecf698ac7915fc81e5d6e9dd417e39ad667701e';
+const DGD_BASE = 'https://dgddigital.com/api/v1';
+
+// ================================================================
 //  MongoDB সংযোগ
 // ================================================================
 const MONGODB_URI = 'mongodb+srv://surujsarkar01_db_user:hSiXnPCwFKWeChNm@cluster0.uovzwiy.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
 const DB_NAME = 'bd_unique_method';
-let db, numbersCollection, otpsCollection, usersCollection;
+let db, numbersCollection, otpsCollection, usersCollection, transactionsCollection;
 
 async function connectDB() {
   try {
@@ -32,6 +39,7 @@ async function connectDB() {
     numbersCollection = db.collection('numbers');
     otpsCollection = db.collection('otps');
     usersCollection = db.collection('users');
+    transactionsCollection = db.collection('transactions');
     console.log('✅ MongoDB সংযুক্ত!');
     await seedDefaultData();
   } catch (error) {
@@ -40,7 +48,6 @@ async function connectDB() {
 }
 
 async function seedDefaultData() {
-  // Numbers
   const numbersCount = await numbersCollection.countDocuments();
   if (numbersCount === 0) {
     await numbersCollection.insertMany([
@@ -52,8 +59,6 @@ async function seedDefaultData() {
       { id: '6', number: '+447911123456', country: 'UK', status: 'available', assignedTo: null }
     ]);
   }
-
-  // Users
   const usersCount = await usersCollection.countDocuments();
   if (usersCount === 0) {
     await usersCollection.insertOne({
@@ -63,8 +68,6 @@ async function seedDefaultData() {
       totalNumbers: 1115
     });
   }
-
-  // OTPs (ডেমো)
   const otpsCount = await otpsCollection.countDocuments();
   if (otpsCount === 0) {
     await otpsCollection.insertMany([
@@ -76,7 +79,7 @@ async function seedDefaultData() {
 }
 
 // ================================================================
-//  টেলিগ্রাম ওয়েবহুক হ্যান্ডলার (নতুন — নাম্বার ডিটেক্ট করে)
+//  টেলিগ্রাম ওয়েবহুক হ্যান্ডলার
 // ================================================================
 app.post('/api/telegram-webhook', async (req, res) => {
   try {
@@ -86,9 +89,6 @@ app.post('/api/telegram-webhook', async (req, res) => {
     const chatId = message.chat.id;
     const text = message.text || '';
 
-    // ============================================================
-    //  কমান্ড হ্যান্ডলার (পুরানো)
-    // ============================================================
     if (text === '/start') {
       await sendTelegramMessage(chatId, `👋 **BD UNIQUE METHOD** বটে স্বাগতম!
 
@@ -101,6 +101,8 @@ app.post('/api/telegram-webhook', async (req, res) => {
 /stats — পরিসংখ্যান দেখুন
 /getnumber — নতুন নাম্বার নিন
 /otps — সাম্প্রতিক OTP দেখুন
+/dgd-get — DGDNETWORK থেকে নাম্বার নিন
+/dgd-check [নাম্বার] — OTP চেক করুন
 /help — সাহায্য দেখুন`);
     } 
     else if (text === '/help') {
@@ -110,6 +112,8 @@ app.post('/api/telegram-webhook', async (req, res) => {
 /stats — টুডে ও অল-টাইম পরিসংখ্যান দেখুন
 /getnumber — একটি নতুন ভার্চুয়াল নাম্বার নিন
 /otps — সর্বশেষ ৫টি OTP দেখুন
+/dgd-get — DGDNETWORK থেকে নতুন নাম্বার নিন
+/dgd-check [নাম্বার] — OTP চেক করুন
 /start — বট পুনরায় চালু করুন
 
 অথবা সরাসরি একটি **নাম্বার** টাইপ করলেই আমি OTP খুঁজে দেব।`);
@@ -162,15 +166,47 @@ app.post('/api/telegram-webhook', async (req, res) => {
       }
     }
     // ============================================================
-    //  নতুন: নাম্বার ডিটেক্ট করা (যেমন +8801712345678)
+    //  DGDNETWORK কমান্ড
+    // ============================================================
+    else if (text === '/dgd-get') {
+      const response = await fetch(`${app.get('baseUrl') || 'https://bd-unique-method.vercel.app'}/api/dgd/get-number`, { method: 'POST' });
+      const data = await response.json();
+      if (data.success) {
+        const num = data.number?.number || data.number?.copy || 'N/A';
+        await sendTelegramMessage(chatId, `✅ **DGDNETWORK নাম্বার প্রোভিশন হয়েছে!**
+        
+📞 নাম্বার: ${num}
+🌍 দেশ: ${data.number?.country || 'Unknown'}`);
+      } else {
+        await sendTelegramMessage(chatId, `❌ ${data.message}`);
+      }
+    }
+    else if (text.startsWith('/dgd-check ')) {
+      const number = text.split(' ')[1];
+      if (!number) {
+        await sendTelegramMessage(chatId, '❌ নাম্বার দিন: /dgd-check 447384512345');
+        return;
+      }
+      const response = await fetch(`${app.get('baseUrl') || 'https://bd-unique-method.vercel.app'}/api/dgd/check-otp?number=${number}`);
+      const data = await response.json();
+      if (data.success && data.otp) {
+        await sendTelegramMessage(chatId, `🔑 **OTP স্ট্যাটাস**
+        
+📞 নাম্বার: ${data.otp.nomor}
+📊 স্ট্যাটাস: ${data.otp.status}
+🔢 OTP: ${data.otp.kode_otp || 'পাওয়া যায়নি'}`);
+      } else {
+        await sendTelegramMessage(chatId, `📭 ${data.message || 'কোনো তথ্য পাওয়া যায়নি'}`);
+      }
+    }
+    // ============================================================
+    //  নাম্বার ডিটেক্ট (ইউজার নাম্বার টাইপ করলে)
     // ============================================================
     else {
-      // চেক করুন ইউজার একটি নাম্বার টাইপ করেছে কিনা
       const phoneRegex = /^(\+?\d{1,4}[\s\-]?)?\(?\d{1,4}\)?[\s\-]?\d{1,4}[\s\-]?\d{1,9}$/;
       const cleanedText = text.replace(/\s/g, '');
       
       if (phoneRegex.test(cleanedText) || cleanedText.match(/^\+?\d{10,15}$/)) {
-        // নাম্বারটি ডাটাবেসে খুঁজুন
         const otp = await otpsCollection.findOne({ number: { $regex: cleanedText, $options: 'i' } });
         
         if (otp) {
@@ -181,7 +217,6 @@ app.post('/api/telegram-webhook', async (req, res) => {
 📱 সার্ভিস: ${otp.service}
 📊 স্ট্যাটাস: ${otp.status === 'success' ? '✅ সফল' : '⏳ pending'}`);
         } else {
-          // নাম্বারটি খুঁজে না পেলে
           await sendTelegramMessage(chatId, `🔍 **${cleanedText}** এই নাম্বারের জন্য কোনো OTP পাওয়া যায়নি।
 
 💡 টিপস:
@@ -189,7 +224,6 @@ app.post('/api/telegram-webhook', async (req, res) => {
 - অথবা /getnumber দিয়ে নতুন নাম্বার নিন`);
         }
       } else {
-        // অজানা কমান্ড বা টেক্সট
         await sendTelegramMessage(chatId, `❓ আমি বুঝতে পারিনি।
 
 📌 সরাসরি একটি **নাম্বার** টাইপ করলে OTP খুঁজে দেব।
@@ -204,9 +238,6 @@ app.post('/api/telegram-webhook', async (req, res) => {
   }
 });
 
-// ================================================================
-//  টেলিগ্রাম মেসেজ পাঠানোর ফাংশন
-// ================================================================
 async function sendTelegramMessage(chatId, text) {
   try {
     await fetch(`${TELEGRAM_API}/sendMessage`, {
@@ -224,7 +255,131 @@ async function sendTelegramMessage(chatId, text) {
 }
 
 // ================================================================
-//  অন্যান্য API রাউটস (আগের মতো)
+//  DGDNETWORK API রাউটস
+// ================================================================
+
+// 1. নাম্বার প্রোভিশন
+app.post('/api/dgd/get-number', async (req, res) => {
+  try {
+    const { range, isNational, removePlus } = req.body;
+    const response = await fetch(`${DGD_BASE}/user/getnum`, {
+      method: 'POST',
+      headers: {
+        'X-API-KEY': DGD_API_KEY,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        range: range || '4473845XXX',
+        is_national: isNational || false,
+        remove_plus: removePlus || false
+      })
+    });
+    const data = await response.json();
+    
+    if (data.ok !== false) {
+      const number = data.data?.number || data.data?.phone || data.data?.copy || 'N/A';
+      await numbersCollection.insertOne({
+        id: number,
+        number: number,
+        country: data.data?.country || 'Unknown',
+        operator: data.data?.operator || 'Unknown',
+        status: 'assigned',
+        assignedTo: 'user_' + Date.now(),
+        source: 'dgdnetwork',
+        raw: data
+      });
+      res.json({ success: true, number: data.data });
+    } else {
+      res.json({ success: false, message: data.message || 'Failed to get number' });
+    }
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
+});
+
+// 2. OTP চেক
+app.get('/api/dgd/check-otp', async (req, res) => {
+  try {
+    const { number } = req.query;
+    if (!number) {
+      return res.json({ success: false, message: 'Number is required' });
+    }
+    
+    const response = await fetch(`${DGD_BASE}/user/checknum?nomor=${encodeURIComponent(number)}`, {
+      method: 'GET',
+      headers: {
+        'X-API-KEY': DGD_API_KEY,
+        'Accept': 'application/json'
+      }
+    });
+    const data = await response.json();
+    
+    if (data.ok && data.data) {
+      if (data.data.status === 'SUKSES' && data.data.kode_otp) {
+        await otpsCollection.insertOne({
+          number: data.data.nomor,
+          otp: data.data.kode_otp,
+          message: `OTP for ${data.data.nomor}: ${data.data.kode_otp}`,
+          service: 'DGDNETWORK',
+          status: 'success',
+          timestamp: new Date().toISOString(),
+          source: 'dgdnetwork'
+        });
+      }
+      res.json({ success: true, otp: data.data });
+    } else {
+      res.json({ success: false, message: data.message || 'No data found' });
+    }
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
+});
+
+// 3. অটো OTP চেকার (প্রতি ৫ সেকেন্ড)
+let otpCheckInterval = null;
+
+function startOtpChecker() {
+  if (otpCheckInterval) clearInterval(otpCheckInterval);
+  otpCheckInterval = setInterval(async () => {
+    try {
+      const pendingNumbers = await numbersCollection.find({ 
+        status: 'assigned',
+        source: 'dgdnetwork'
+      }).toArray();
+      
+      for (const entry of pendingNumbers) {
+        const response = await fetch(`${DGD_BASE}/user/checknum?nomor=${encodeURIComponent(entry.number)}`, {
+          headers: { 'X-API-KEY': DGD_API_KEY, 'Accept': 'application/json' }
+        });
+        const data = await response.json();
+        
+        if (data.ok && data.data?.status === 'SUKSES' && data.data?.kode_otp) {
+          await otpsCollection.insertOne({
+            number: data.data.nomor,
+            otp: data.data.kode_otp,
+            message: `OTP for ${data.data.nomor}: ${data.data.kode_otp}`,
+            service: 'DGDNETWORK',
+            status: 'success',
+            timestamp: new Date().toISOString(),
+            source: 'dgdnetwork'
+          });
+          await numbersCollection.updateOne(
+            { _id: entry._id },
+            { $set: { status: 'completed' } }
+          );
+        }
+      }
+    } catch (error) {
+      console.error('OTP Checker Error:', error);
+    }
+  }, 5000);
+}
+
+startOtpChecker();
+
+// ================================================================
+//  অন্যান্য API রাউটস
 // ================================================================
 app.get('/api/stats', async (req, res) => {
   try {
@@ -364,7 +519,7 @@ app.post('/api/add-number', async (req, res) => {
 // ================================================================
 connectDB().then(() => {
   app.listen(PORT, () => {
-    console.log(`✅ Server running on port ${PORT}`);
+    console.log(`✅ BD UNIQUE METHOD Server running at http://localhost:${PORT}`);
   });
 });
 
