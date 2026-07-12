@@ -80,12 +80,10 @@ async function sendTelegramMessage(chatId, text, extra = {}) {
 }
 
 // ================================================================
-//  FAST X OTP API কল (ডিবাগ সহ)
+//  FAST X OTP API কল
 // ================================================================
 async function callFastXAPI(endpoint, options = {}) {
   const url = `${FASTX_BASE}${endpoint}`;
-  console.log(`📤 Calling FASTX API: ${url}`);
-  
   try {
     const response = await fetch(url, {
       ...options,
@@ -96,24 +94,15 @@ async function callFastXAPI(endpoint, options = {}) {
         ...options.headers
       }
     });
-    
-    console.log(`📥 Response Status: ${response.status}`);
-    
     const text = await response.text();
-    console.log(`📥 Response Body:`, text.substring(0, 500));
-    
-    if (!text || text.trim() === '') {
-      return { ok: false, message: 'Empty response from API' };
-    }
-    
     try {
       return JSON.parse(text);
     } catch (e) {
-      console.error('❌ JSON Parse Error:', text.substring(0, 200));
+      console.error('FASTX JSON Parse Error:', text.substring(0, 200));
       return { ok: false, message: 'Invalid JSON response', raw: text.substring(0, 200) };
     }
   } catch (error) {
-    console.error('❌ FASTX API Error:', error);
+    console.error('FASTX API Error:', error);
     return { ok: false, message: error.message };
   }
 }
@@ -124,11 +113,8 @@ async function callFastXAPI(endpoint, options = {}) {
 
 // Get Number
 app.post('/api/fastx/get-number', async (req, res) => {
-  console.log('📞 Get Number request received');
   try {
     const { range } = req.body;
-    console.log(`📞 Range: ${range}`);
-    
     const data = await callFastXAPI('/user/getnum', {
       method: 'POST',
       body: JSON.stringify({
@@ -138,10 +124,8 @@ app.post('/api/fastx/get-number', async (req, res) => {
       })
     });
     
-    console.log('📞 API Response Data:', JSON.stringify(data, null, 2));
-    
     if (data.ok !== false && data.data) {
-      const number = data.data?.number || data.data?.copy || data.data?.phone || 'N/A';
+      const number = data.data?.number || data.data?.copy || 'N/A';
       await numbersCollection.insertOne({
         id: number,
         number: number,
@@ -155,32 +139,25 @@ app.post('/api/fastx/get-number', async (req, res) => {
     } else {
       return res.json({ 
         success: false, 
-        message: data?.message || 'নাম্বার পাওয়া যায়নি',
-        debug: data
+        message: data?.message || 'নাম্বার পাওয়া যায়নি'
       });
     }
   } catch (error) {
-    console.error('❌ Get Number Error:', error);
+    console.error('Get Number Error:', error);
     return res.json({ success: false, message: error.message });
   }
 });
 
 // Check OTP
 app.get('/api/fastx/check-otp', async (req, res) => {
-  console.log('🔍 Check OTP request received');
   try {
     const { number } = req.query;
-    console.log(`🔍 Number: ${number}`);
-    
     if (!number) {
       return res.json({ success: false, message: 'Number required' });
     }
-    
     const data = await callFastXAPI(`/user/checknum?nomor=${encodeURIComponent(number)}`, {
       method: 'GET'
     });
-    
-    console.log('🔍 API Response:', JSON.stringify(data, null, 2));
     
     if (data.ok && data.data) {
       if (data.data.status === 'SUKSES' && data.data.kode_otp) {
@@ -198,7 +175,7 @@ app.get('/api/fastx/check-otp', async (req, res) => {
       return res.json({ success: false, message: data?.message || 'No OTP found' });
     }
   } catch (error) {
-    console.error('❌ Check OTP Error:', error);
+    console.error('Check OTP Error:', error);
     return res.json({ success: false, message: error.message });
   }
 });
@@ -280,7 +257,6 @@ app.post('/api/telegram-webhook', async (req, res) => {
     const { message, callback_query } = req.body;
     if (!message && !callback_query) return res.sendStatus(200);
     
-    // মেনু বাটন
     const mainMenu = {
       reply_markup: {
         inline_keyboard: [
@@ -292,14 +268,13 @@ app.post('/api/telegram-webhook', async (req, res) => {
       }
     };
     
-    // Callback Query
     if (callback_query) {
       const chatId = callback_query.message.chat.id;
       const data = callback_query.data;
 
       if (data === 'get_number') {
         await sendTelegramMessage(chatId,
-          `📱 **প্ল্যাটফর্ম সিলেক্ট করুন**\n\nযে প্ল্যাটফর্মের জন্য নাম্বার চান, সেটি বেছে নিন:`,
+          `📱 **প্ল্যাটফর্ম সিলেক্ট করুন**`,
           {
             reply_markup: {
               inline_keyboard: [
@@ -316,14 +291,7 @@ app.post('/api/telegram-webhook', async (req, res) => {
       else if (data.startsWith('platform_')) {
         const platform = data.replace('platform_', '');
         await sendTelegramMessage(chatId,
-          `✅ **${platform.toUpperCase()}** সিলেক্ট করা হয়েছে!\n\nএখন রেঞ্জ দিন (যেমন: 4473845XXX):`,
-          {
-            reply_markup: {
-              inline_keyboard: [
-                [{ text: '🔙 ফিরে যান', callback_data: 'get_number' }]
-              ]
-            }
-          }
+          `✅ **${platform.toUpperCase()}** সিলেক্ট করা হয়েছে!\n\nএখন রেঞ্জ দিন (যেমন: 4473845XXX):`
         );
       }
       else if (data === 'balance') {
@@ -334,19 +302,13 @@ app.post('/api/telegram-webhook', async (req, res) => {
           `মোট আয়: $${user?.totalEarned?.toFixed(3) || '0.000'}\n` +
           `রেফার বোনাস: $${user?.referBalance?.toFixed(3) || '0.000'}\n` +
           `মোট OTP: ${user?.totalOtps || 0}`,
-          {
-            reply_markup: {
-              inline_keyboard: [[{ text: '🔙 মেনু', callback_data: 'back_menu' }]]
-            }
-          }
+          { reply_markup: { inline_keyboard: [[{ text: '🔙 মেনু', callback_data: 'back_menu' }]] } }
         );
       }
       else if (data === 'withdraw') {
         const user = await usersCollection.findOne({});
         await sendTelegramMessage(chatId,
-          `💳 **উইথড্র**\n\n` +
-          `আপনার ব্যালেন্স: $${user?.balance?.toFixed(3) || '0.000'}\n\n` +
-          `কোন মেথডে উইথড্র করবেন?`,
+          `💳 **উইথড্র**\n\nআপনার ব্যালেন্স: $${user?.balance?.toFixed(3) || '0.000'}`,
           {
             reply_markup: {
               inline_keyboard: [
@@ -361,39 +323,24 @@ app.post('/api/telegram-webhook', async (req, res) => {
       }
       else if (data === 'refer') {
         const referLink = `https://t.me/BDUNIQUE_METHOD_bot?start=ref_${chatId}`;
-        const user = await usersCollection.findOne({});
         await sendTelegramMessage(chatId,
-          `🔗 **রেফার লিংক**\n\n` +
-          `আপনার রেফার লিংক:\n${referLink}\n\n` +
-          `প্রতিটি রেফারের জন্য আপনি $0.05 বোনাস পাবেন!\n` +
-          `আপনার মোট রেফার: ${user?.referredUsers?.length || 0}`,
-          {
-            reply_markup: {
-              inline_keyboard: [[{ text: '🔙 মেনু', callback_data: 'back_menu' }]]
-            }
-          }
+          `🔗 **রেফার লিংক**\n\n${referLink}`,
+          { reply_markup: { inline_keyboard: [[{ text: '🔙 মেনু', callback_data: 'back_menu' }]] } }
         );
       }
       else if (data === 'back_menu') {
         await sendTelegramMessage(chatId,
-          `👋 **BD UNIQUE METHOD** বটে ফিরে আসুন!\n\nনিচের বাটনগুলো ব্যবহার করুন:`,
+          `👋 **BD UNIQUE METHOD** বটে ফিরে আসুন!`,
           mainMenu
         );
       }
       else if (data.startsWith('withdraw_')) {
         const method = data.replace('withdraw_', '');
         await sendTelegramMessage(chatId,
-          `✅ **${method.toUpperCase()}** সিলেক্ট করা হয়েছে!\n\n` +
-          `আপনার উইথড্র রিকোয়েস্ট প্রক্রিয়াধীন...\n\n` +
-          `আমাদের সাপোর্ট টিম শীঘ্রই যোগাযোগ করবে।`,
-          {
-            reply_markup: {
-              inline_keyboard: [[{ text: '🔙 মেনু', callback_data: 'back_menu' }]]
-            }
-          }
+          `✅ **${method.toUpperCase()}** সিলেক্ট করা হয়েছে!\n\nআপনার উইথড্র রিকোয়েস্ট প্রক্রিয়াধীন...`,
+          { reply_markup: { inline_keyboard: [[{ text: '🔙 মেনু', callback_data: 'back_menu' }]] } }
         );
       }
-
       return res.sendStatus(200);
     }
 
@@ -402,20 +349,14 @@ app.post('/api/telegram-webhook', async (req, res) => {
     const chatId = message.chat.id;
     const text = message.text || '';
 
-    // রেঞ্জ চেক (Get Number-এর পরে)
+    // রেঞ্জ চেক
     if (text.match(/^\d{4,10}X{0,3}$/)) {
       const range = text.trim();
       try {
-        const response = await fetch(`${FASTX_BASE}/user/getnum`, {
+        const data = await callFastXAPI('/user/getnum', {
           method: 'POST',
-          headers: {
-            'X-API-KEY': FASTX_API_KEY,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
           body: JSON.stringify({ range, is_national: false, remove_plus: false })
         });
-        const data = await response.json();
         if (data.ok !== false && data.data) {
           const number = data.data?.number || data.data?.copy || 'N/A';
           await numbersCollection.insertOne({
@@ -429,21 +370,10 @@ app.post('/api/telegram-webhook', async (req, res) => {
           });
           await usersCollection.updateOne({}, { $inc: { totalNumbers: 1 } });
           await sendTelegramMessage(chatId,
-            `✅ **নাম্বার প্রোভিশন হয়েছে!**\n\n` +
-            `📞 নাম্বার: ${number}\n` +
-            `🌍 দেশ: ${data.data?.country || 'Unknown'}\n\n` +
-            `OTP আসার জন্য অপেক্ষা করুন...`,
-            {
-              reply_markup: {
-                inline_keyboard: [
-                  [{ text: '🔄 OTP চেক করুন', callback_data: 'check_otp' }],
-                  [{ text: '🔙 মেনু', callback_data: 'back_menu' }]
-                ]
-              }
-            }
+            `✅ **নাম্বার প্রোভিশন হয়েছে!**\n\n📞 নাম্বার: ${number}\n🌍 দেশ: ${data.data?.country || 'Unknown'}`
           );
         } else {
-          await sendTelegramMessage(chatId, `❌ **নাম্বার নেওয়া ব্যর্থ!**\n\n${data?.message || 'সঠিক রেঞ্জ দিন'}`);
+          await sendTelegramMessage(chatId, `❌ ${data?.message || 'নাম্বার পাওয়া যায়নি'}`);
         }
       } catch (error) {
         await sendTelegramMessage(chatId, `❌ Error: ${error.message}`);
@@ -453,25 +383,13 @@ app.post('/api/telegram-webhook', async (req, res) => {
 
     // কমান্ড
     if (text === '/start') {
-      await sendTelegramMessage(chatId,
-        `👋 **BD UNIQUE METHOD** বটে স্বাগতম!\n\n` +
-        `নিচের বাটনগুলো ব্যবহার করুন:`,
-        mainMenu
-      );
+      await sendTelegramMessage(chatId, `👋 **BD UNIQUE METHOD** বটে স্বাগতম!`, mainMenu);
     } else {
-      await sendTelegramMessage(chatId,
-        `❓ আমি বুঝতে পারিনি।\n\n/start দিয়ে বট চালু করুন অথবা নিচের বাটন ব্যবহার করুন।`,
-        {
-          reply_markup: {
-            inline_keyboard: [[{ text: '🔙 মেনু', callback_data: 'back_menu' }]]
-          }
-        }
-      );
+      await sendTelegramMessage(chatId, `❓ আমি বুঝতে পারিনি। /start দিয়ে বট চালু করুন।`);
     }
-
     res.sendStatus(200);
   } catch (error) {
-    console.error('❌ Webhook error:', error);
+    console.error('Webhook error:', error);
     res.sendStatus(200);
   }
 });
