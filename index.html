@@ -38,7 +38,6 @@
     .tab-btn:hover{color:var(--text-primary)}
     .page-section{display:none}
     .page-section.active{display:block}
-    .carrier-bar{transition:width 0.8s ease-in-out}
     @media(max-width:640px){.number-hero{font-size:1.8rem}.stat-number{font-size:1.3rem}.glass-card{padding:1.2rem}}
   </style>
 </head>
@@ -67,9 +66,7 @@
     <button class="tab-btn" data-page="payment">💳 Payment</button>
   </div>
 
-  <!-- ============================================================ -->
-  <!-- PAGE: DASHBOARD -->
-  <!-- ============================================================ -->
+  <!-- DASHBOARD -->
   <div id="page-dashboard" class="page-section active">
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
       <div class="glass-card"><div class="stat-label">Numbers</div><div class="stat-number" id="statNumbers">0</div></div>
@@ -83,9 +80,7 @@
     </div>
   </div>
 
-  <!-- ============================================================ -->
-  <!-- PAGE: GET NUMBER -->
-  <!-- ============================================================ -->
+  <!-- GET NUMBER -->
   <div id="page-getnumber" class="page-section">
     <div class="glass-card">
       <h2 class="text-lg font-bold flex items-center gap-2 mb-4"><i data-feather="phone" class="text-[#f59e0b]"></i> Get Number</h2>
@@ -102,57 +97,17 @@
     </div>
   </div>
 
-  <!-- ============================================================ -->
-  <!-- PAGE: LIVE CONSOLE (সম্পূর্ণ FAST X OTP স্টাইল) -->
-  <!-- ============================================================ -->
+  <!-- LIVE CONSOLE -->
   <div id="page-liveconsole" class="page-section">
     <div class="glass-card">
-      <h2 class="text-lg font-bold flex items-center gap-2 mb-4">
-        <i data-feather="activity" class="text-[#f59e0b]"></i> Live Console
-      </h2>
-      
-      <!-- Traffic Overview -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-        <div class="bg-[#0a0e1a] p-3 rounded-xl text-center">
-          <p class="text-xs text-text-muted">Total</p>
-          <p class="text-2xl font-bold text-[#f59e0b]" id="liveTotal">0</p>
-        </div>
-        <div class="bg-[#0a0e1a] p-3 rounded-xl text-center">
-          <p class="text-xs text-text-muted">Facebook</p>
-          <p class="text-2xl font-bold text-[#3b82f6]" id="liveFacebook">0</p>
-        </div>
-        <div class="bg-[#0a0e1a] p-3 rounded-xl text-center">
-          <p class="text-xs text-text-muted">WhatsApp</p>
-          <p class="text-2xl font-bold text-[#10b981]" id="liveWhatsApp">0</p>
-        </div>
-        <div class="bg-[#0a0e1a] p-3 rounded-xl text-center">
-          <p class="text-xs text-text-muted">Others</p>
-          <p class="text-2xl font-bold text-[#94a3b8]" id="liveOthers">0</p>
-        </div>
-      </div>
-
-      <!-- Network Distribution -->
-      <div class="mb-4">
-        <h4 class="text-sm font-semibold text-text-secondary mb-2">📡 Network Distribution</h4>
-        <div id="networkDistribution" class="space-y-1">
-          <p class="text-text-muted text-sm">Loading...</p>
-        </div>
-        <div class="text-right text-xs text-text-muted mt-1" id="liveTotalCount">Total: 0</div>
-      </div>
-
-      <!-- Live Stream -->
-      <div>
-        <h4 class="text-sm font-semibold text-text-secondary mb-2">📨 Live Stream</h4>
-        <div id="liveStream" class="space-y-2 max-h-96 overflow-y-auto">
-          <p class="text-text-muted text-sm text-center py-4">Waiting for OTPs...</p>
-        </div>
+      <h2 class="text-lg font-bold flex items-center gap-2 mb-4"><i data-feather="activity" class="text-[#f59e0b]"></i> Live Console</h2>
+      <div id="liveStream" class="space-y-2 max-h-96 overflow-y-auto">
+        <p class="text-text-muted text-sm text-center py-4">Loading...</p>
       </div>
     </div>
   </div>
 
-  <!-- ============================================================ -->
-  <!-- PAGE: PROFILE -->
-  <!-- ============================================================ -->
+  <!-- PROFILE -->
   <div id="page-profile" class="page-section">
     <div class="glass-card">
       <h2 class="text-lg font-bold flex items-center gap-2 mb-4"><i data-feather="user" class="text-[#f59e0b]"></i> Profile</h2>
@@ -161,15 +116,11 @@
         <div><p class="text-xs text-text-muted">Total OTPs</p><p class="text-sm" id="profileOtps">0</p></div>
         <div><p class="text-xs text-text-muted">Refer Balance</p><p class="text-sm text-[#10b981]" id="profileRefer">$0.000</p></div>
         <div><p class="text-xs text-text-muted">API Key Status</p><p class="text-sm text-[#10b981]">✔ Active</p></div>
-        <div><p class="text-xs text-text-muted">Member Since</p><p class="text-sm">Jun 2026</p></div>
-        <div><p class="text-xs text-text-muted">OTP Rate</p><p class="text-sm">$0.10/OTP</p></div>
       </div>
     </div>
   </div>
 
-  <!-- ============================================================ -->
-  <!-- PAGE: PAYMENT -->
-  <!-- ============================================================ -->
+  <!-- PAYMENT -->
   <div id="page-payment" class="page-section">
     <div class="glass-card">
       <h2 class="text-lg font-bold flex items-center gap-2 mb-4"><i data-feather="credit-card" class="text-[#f59e0b]"></i> Payment</h2>
@@ -194,9 +145,7 @@
 <script>
   const API_BASE = window.location.origin;
 
-  // ================================================================
-  //  TAB NAVIGATION
-  // ================================================================
+  // TAB
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -204,14 +153,10 @@
       document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
       document.getElementById('page-' + btn.dataset.page).classList.add('active');
       if (btn.dataset.page === 'liveconsole') loadLiveConsole();
-      if (btn.dataset.page === 'profile') loadProfile();
-      if (btn.dataset.page === 'payment') loadPayment();
     });
   });
 
-  // ================================================================
-  //  DASHBOARD STATS
-  // ================================================================
+  // STATS
   async function loadStats() {
     try {
       const res = await fetch(`${API_BASE}/api/stats`);
@@ -230,9 +175,7 @@
     } catch (e) { console.error('Stats error:', e); }
   }
 
-  // ================================================================
-  //  RECENT OTPs
-  // ================================================================
+  // OTPs
   async function loadOtps() {
     try {
       const res = await fetch(`${API_BASE}/api/otps`);
@@ -253,9 +196,7 @@
     } catch (e) { console.error('OTPs error:', e); }
   }
 
-  // ================================================================
-  //  GET NUMBER
-  // ================================================================
+  // GET NUMBER
   document.getElementById('getNumberBtn').addEventListener('click', async () => {
     const range = document.getElementById('rangeInput').value.trim() || '4473845XXX';
     const display = document.getElementById('displayNumber');
@@ -299,109 +240,28 @@
     } catch (e) { alert('Error: ' + e.message); }
   });
 
-  // ================================================================
-  //  LIVE CONSOLE (সম্পূর্ণ FAST X OTP স্টাইল)
-  // ================================================================
+  // LIVE CONSOLE
   async function loadLiveConsole() {
     try {
       const res = await fetch(`${API_BASE}/api/otps`);
       const data = await res.json();
-      
-      if (data.success && data.otps) {
-        const otps = data.otps;
-        const total = otps.length;
-        
-        // মোট ও প্ল্যাটফর্ম কাউন্ট
-        document.getElementById('liveTotal').textContent = total;
-        const facebook = otps.filter(o => o.service?.toLowerCase().includes('facebook')).length;
-        const whatsapp = otps.filter(o => o.service?.toLowerCase().includes('whatsapp')).length;
-        const others = total - facebook - whatsapp;
-        document.getElementById('liveFacebook').textContent = facebook;
-        document.getElementById('liveWhatsApp').textContent = whatsapp;
-        document.getElementById('liveOthers').textContent = others;
-        document.getElementById('liveTotalCount').textContent = `Total: ${total}`;
-
-        // ============================================================
-        //  নেটওয়ার্ক ডিস্ট্রিবিউশন (FAST X OTP স্টাইল)
-        // ============================================================
-        const carrierMap = {};
-        otps.forEach(o => {
-          const carrier = o.operator || o.carrier || 'Unknown';
-          carrierMap[carrier] = (carrierMap[carrier] || 0) + 1;
-        });
-        
-        const carrierContainer = document.getElementById('networkDistribution');
-        const sortedCarriers = Object.entries(carrierMap).sort((a, b) => b[1] - a[1]);
-        
-        if (sortedCarriers.length > 0) {
-          let carrierHtml = '';
-          sortedCarriers.forEach(([carrier, count]) => {
-            const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
-            const barColor = percentage > 50 ? 'bg-[#10b981]' : percentage > 20 ? 'bg-[#f59e0b]' : 'bg-[#3b82f6]';
-            carrierHtml += `
-              <div class="flex items-center gap-2 text-sm">
-                <span class="w-28 text-text-muted truncate text-xs">${carrier}</span>
-                <div class="flex-1 bg-[#1a2236] rounded-full h-2">
-                  <div class="${barColor} h-2 rounded-full carrier-bar" style="width: ${percentage}%"></div>
-                </div>
-                <span class="text-text-muted text-xs w-16 text-right">${count} (${percentage}%)</span>
-              </div>
-            `;
-          });
-          carrierContainer.innerHTML = carrierHtml;
-        } else {
-          carrierContainer.innerHTML = '<p class="text-text-muted text-sm">No carrier data available</p>';
-        }
-
-        // ============================================================
-        //  লাইভ স্ট্রিম (FAST X OTP স্টাইল)
-        // ============================================================
-        const streamContainer = document.getElementById('liveStream');
-        const latest = otps.slice(0, 30);
-        
-        if (latest.length > 0) {
-          streamContainer.innerHTML = latest.map(o => {
-            const time = o.timestamp ? new Date(o.timestamp).toLocaleTimeString() : '--:--:--';
-            const country = o.country || 'Unknown';
-            const number = o.number || 'N/A';
-            const otp = o.otp || '••••••';
-            const service = o.service || 'Unknown';
-            const status = o.status === 'success' ? '✅' : '⏳';
-            
-            return `
-              <div class="flex items-center justify-between text-sm p-2 bg-white/5 rounded-lg hover:bg-white/10 transition">
-                <div class="flex items-center gap-3 flex-1 overflow-hidden">
-                  <span class="text-text-muted text-xs w-16 flex-shrink-0">${time}</span>
-                  <span class="text-text-muted text-xs w-20 truncate flex-shrink-0">${country}</span>
-                  <span class="text-[#3b82f6] text-xs w-16 truncate flex-shrink-0">${service}</span>
-                  <span class="font-mono text-xs w-28 truncate flex-shrink-0">${number}</span>
-                </div>
-                <div class="flex items-center gap-2 flex-shrink-0">
-                  <span class="text-[#f59e0b] font-mono text-sm">${otp}</span>
-                  <span class="text-xs">${status}</span>
-                </div>
-              </div>
-            `;
-          }).join('');
-        } else {
-          streamContainer.innerHTML = '<p class="text-text-muted text-sm text-center py-4">No OTPs received yet</p>';
-        }
+      const container = document.getElementById('liveStream');
+      if (data.success && data.otps.length > 0) {
+        container.innerHTML = data.otps.slice(0, 20).map(o => `
+          <div class="flex items-center justify-between text-sm p-2 bg-white/5 rounded-lg">
+            <span class="text-text-muted text-xs">${o.timestamp ? new Date(o.timestamp).toLocaleTimeString() : ''}</span>
+            <span class="font-mono">${o.number || 'N/A'}</span>
+            <span class="text-[#f59e0b]">${o.otp || '—'}</span>
+            <span class="text-text-muted text-xs">${o.service || 'Unknown'}</span>
+          </div>
+        `).join('');
+      } else {
+        container.innerHTML = '<p class="text-text-muted text-sm text-center py-4">No OTPs</p>';
       }
-    } catch (error) {
-      console.error('Live Console Error:', error);
-      document.getElementById('liveStream').innerHTML = '<p class="text-red-400 text-sm text-center py-4">Error loading live stream</p>';
-    }
+    } catch (e) { console.error('Live console error:', e); }
   }
 
-  // ================================================================
-  //  PROFILE & PAYMENT
-  // ================================================================
-  async function loadProfile() { loadStats(); }
-  async function loadPayment() { loadStats(); }
-
-  // ================================================================
-  //  WITHDRAW
-  // ================================================================
+  // WITHDRAW
   document.getElementById('withdrawBtn').addEventListener('click', async () => {
     const method = document.getElementById('withdrawMethod').value;
     const result = document.getElementById('withdrawResult');
@@ -424,25 +284,13 @@
     }
   });
 
-  // ================================================================
-  //  AUTO REFRESH
-  // ================================================================
-  setInterval(() => {
-    loadStats();
-    loadOtps();
-    if (document.getElementById('page-liveconsole').classList.contains('active')) {
-      loadLiveConsole();
-    }
-  }, 15000);
-
-  // ================================================================
-  //  INIT
-  // ================================================================
+  // INIT
   document.addEventListener('DOMContentLoaded', () => {
     feather.replace();
     loadStats();
     loadOtps();
-    // Live Console লোড হবে যখন ট্যাব ক্লিক করবে
+    setInterval(loadStats, 30000);
+    setInterval(loadOtps, 15000);
   });
 </script>
 
