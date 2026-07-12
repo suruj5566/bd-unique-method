@@ -11,15 +11,9 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static('.'));
 
-// ================================================================
-//  টেলিগ্রাম বট টোকেন (আপনার টোকেন)
-// ================================================================
 const TELEGRAM_BOT_TOKEN = '8806967153:AAFE7X5CS_t7o4FvzuU4x5qK_emgRok6GW0';
 const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
 
-// ================================================================
-//  MongoDB সংযোগ
-// ================================================================
 const MONGODB_URI = 'mongodb+srv://surujsarkar01_db_user:hSiXnPCwFKWeChNm@cluster0.uovzwiy.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
 const DB_NAME = 'bd_unique_method';
 let db, numbersCollection, otpsCollection, usersCollection, transactionsCollection;
@@ -35,29 +29,45 @@ async function connectDB() {
     transactionsCollection = db.collection('transactions');
     console.log('✅ MongoDB সংযুক্ত!');
     await seedDefaultData();
-    await setupTelegramWebhook();
   } catch (error) {
     console.error('❌ MongoDB সংযোগ ত্রুটি:', error);
     process.exit(1);
   }
 }
 
-// ================================================================
-//  টেলিগ্রাম ওয়েবহুক সেটআপ
-// ================================================================
-async function setupTelegramWebhook() {
-  try {
-    const url = `https://bd-unique-method.vercel.app/api/telegram-webhook`;
-    const response = await fetch(`${TELEGRAM_API}/setWebhook?url=${url}`);
-    const data = await response.json();
-    console.log('✅ টেলিগ্রাম ওয়েবহুক সেট:', data);
-  } catch (error) {
-    console.error('❌ টেলিগ্রাম ওয়েবহুক ত্রুটি:', error);
+async function seedDefaultData() {
+  const numbersCount = await numbersCollection.countDocuments();
+  if (numbersCount === 0) {
+    await numbersCollection.insertMany([
+      { id: '1', number: '+8801712345678', country: 'Bangladesh', status: 'available', assignedTo: null },
+      { id: '2', number: '+8801812345678', country: 'Bangladesh', status: 'available', assignedTo: null },
+      { id: '3', number: '+8801912345678', country: 'Bangladesh', status: 'available', assignedTo: null },
+      { id: '4', number: '+919876543210', country: 'India', status: 'available', assignedTo: null },
+      { id: '5', number: '+16501234567', country: 'USA', status: 'available', assignedTo: null },
+      { id: '6', number: '+447911123456', country: 'UK', status: 'available', assignedTo: null }
+    ]);
+  }
+  const usersCount = await usersCollection.countDocuments();
+  if (usersCount === 0) {
+    await usersCollection.insertOne({
+      balance: 107.800,
+      totalEarned: 107.800,
+      totalOtps: 672,
+      totalNumbers: 1115
+    });
+  }
+  const otpsCount = await otpsCollection.countDocuments();
+  if (otpsCount === 0) {
+    await otpsCollection.insertMany([
+      { id: '1', number: '+8801712345678', otp: '123456', service: 'Facebook', status: 'success', timestamp: new Date().toISOString() },
+      { id: '2', number: '+8801812345678', otp: '789012', service: 'Google', status: 'pending', timestamp: new Date().toISOString() },
+      { id: '3', number: '+8801912345678', otp: '345678', service: 'WhatsApp', status: 'success', timestamp: new Date(Date.now() - 600000).toISOString() }
+    ]);
   }
 }
 
 // ================================================================
-//  টেলিগ্রাম মেসেজ হ্যান্ডলার
+//  টেলিগ্রাম ওয়েবহুক হ্যান্ডলার
 // ================================================================
 app.post('/api/telegram-webhook', async (req, res) => {
   try {
@@ -147,9 +157,6 @@ app.post('/api/telegram-webhook', async (req, res) => {
   }
 });
 
-// ================================================================
-//  টেলিগ্রাম মেসেজ পাঠানোর ফাংশন
-// ================================================================
 async function sendTelegramMessage(chatId, text) {
   try {
     await fetch(`${TELEGRAM_API}/sendMessage`, {
@@ -163,42 +170,6 @@ async function sendTelegramMessage(chatId, text) {
     });
   } catch (error) {
     console.error('টেলিগ্রাম পাঠানোর ত্রুটি:', error);
-  }
-}
-
-// ================================================================
-//  ডিফল্ট ডেটা তৈরি
-// ================================================================
-async function seedDefaultData() {
-  const numbersCount = await numbersCollection.countDocuments();
-  if (numbersCount === 0) {
-    await numbersCollection.insertMany([
-      { id: '1', number: '+8801712345678', country: 'Bangladesh', status: 'available', assignedTo: null },
-      { id: '2', number: '+8801812345678', country: 'Bangladesh', status: 'available', assignedTo: null },
-      { id: '3', number: '+8801912345678', country: 'Bangladesh', status: 'available', assignedTo: null },
-      { id: '4', number: '+919876543210', country: 'India', status: 'available', assignedTo: null },
-      { id: '5', number: '+16501234567', country: 'USA', status: 'available', assignedTo: null },
-      { id: '6', number: '+447911123456', country: 'UK', status: 'available', assignedTo: null }
-    ]);
-  }
-
-  const usersCount = await usersCollection.countDocuments();
-  if (usersCount === 0) {
-    await usersCollection.insertOne({
-      balance: 107.800,
-      totalEarned: 107.800,
-      totalOtps: 672,
-      totalNumbers: 1115
-    });
-  }
-
-  const otpsCount = await otpsCollection.countDocuments();
-  if (otpsCount === 0) {
-    await otpsCollection.insertMany([
-      { id: '1', number: '+8801712345678', otp: '123456', service: 'Facebook', status: 'success', timestamp: new Date().toISOString() },
-      { id: '2', number: '+8801812345678', otp: '789012', service: 'Google', status: 'pending', timestamp: new Date().toISOString() },
-      { id: '3', number: '+8801912345678', otp: '345678', service: 'WhatsApp', status: 'success', timestamp: new Date(Date.now() - 600000).toISOString() }
-    ]);
   }
 }
 
