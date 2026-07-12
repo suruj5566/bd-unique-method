@@ -1,7 +1,7 @@
 {
   "name": "bd-unique-method",
   "version": "1.0.0",
-  "description": "BD UNIQUE METHOD - Full OTP Dashboard",
+  "description": "BD UNIQUE METHOD - Full OTP Dashboard with DGDNETWORK",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -11,6 +11,7 @@
     "cors": "^2.8.5",
     "body-parser": "^1.20.2",
     "uuid": "^9.0.0",
-    "mongodb": "^5.8.0"
+    "mongodb": "^5.8.0",
+    "axios": "^1.6.0"
   }
 }
