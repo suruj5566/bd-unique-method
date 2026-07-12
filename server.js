@@ -11,14 +11,23 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static('.'));
 
+// ================================================================
+//  টেলিগ্রাম বট টোকেন
+// ================================================================
 const TELEGRAM_BOT_TOKEN = '8806967153:AAFE7X5CS_t7o4FvzuU4x5qK_emgRok6GW0';
 const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
 
+// ================================================================
+//  MongoDB সংযোগ
+// ================================================================
 const MONGODB_URI = 'mongodb+srv://surujsarkar01_db_user:hSiXnPCwFKWeChNm@cluster0.uovzwiy.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
 const DB_NAME = 'bd_unique_method';
 let db, numbersCollection, otpsCollection, usersCollection, transactionsCollection;
 
+console.log('🚀 Server starting...');
+
 async function connectDB() {
+  console.log('📦 Connecting to MongoDB...');
   try {
     const client = new MongoClient(MONGODB_URI);
     await client.connect();
@@ -27,42 +36,50 @@ async function connectDB() {
     otpsCollection = db.collection('otps');
     usersCollection = db.collection('users');
     transactionsCollection = db.collection('transactions');
-    console.log('✅ MongoDB সংযুক্ত!');
+    console.log('✅ MongoDB Connected Successfully!');
     await seedDefaultData();
   } catch (error) {
-    console.error('❌ MongoDB সংযোগ ত্রুটি:', error);
+    console.error('❌ MongoDB Connection Error:', error);
     process.exit(1);
   }
 }
 
 async function seedDefaultData() {
-  const numbersCount = await numbersCollection.countDocuments();
-  if (numbersCount === 0) {
-    await numbersCollection.insertMany([
-      { id: '1', number: '+8801712345678', country: 'Bangladesh', status: 'available', assignedTo: null },
-      { id: '2', number: '+8801812345678', country: 'Bangladesh', status: 'available', assignedTo: null },
-      { id: '3', number: '+8801912345678', country: 'Bangladesh', status: 'available', assignedTo: null },
-      { id: '4', number: '+919876543210', country: 'India', status: 'available', assignedTo: null },
-      { id: '5', number: '+16501234567', country: 'USA', status: 'available', assignedTo: null },
-      { id: '6', number: '+447911123456', country: 'UK', status: 'available', assignedTo: null }
-    ]);
-  }
-  const usersCount = await usersCollection.countDocuments();
-  if (usersCount === 0) {
-    await usersCollection.insertOne({
-      balance: 107.800,
-      totalEarned: 107.800,
-      totalOtps: 672,
-      totalNumbers: 1115
-    });
-  }
-  const otpsCount = await otpsCollection.countDocuments();
-  if (otpsCount === 0) {
-    await otpsCollection.insertMany([
-      { id: '1', number: '+8801712345678', otp: '123456', service: 'Facebook', status: 'success', timestamp: new Date().toISOString() },
-      { id: '2', number: '+8801812345678', otp: '789012', service: 'Google', status: 'pending', timestamp: new Date().toISOString() },
-      { id: '3', number: '+8801912345678', otp: '345678', service: 'WhatsApp', status: 'success', timestamp: new Date(Date.now() - 600000).toISOString() }
-    ]);
+  console.log('🌱 Seeding default data...');
+  try {
+    const numbersCount = await numbersCollection.countDocuments();
+    if (numbersCount === 0) {
+      await numbersCollection.insertMany([
+        { id: '1', number: '+8801712345678', country: 'Bangladesh', status: 'available', assignedTo: null },
+        { id: '2', number: '+8801812345678', country: 'Bangladesh', status: 'available', assignedTo: null },
+        { id: '3', number: '+8801912345678', country: 'Bangladesh', status: 'available', assignedTo: null },
+        { id: '4', number: '+919876543210', country: 'India', status: 'available', assignedTo: null },
+        { id: '5', number: '+16501234567', country: 'USA', status: 'available', assignedTo: null },
+        { id: '6', number: '+447911123456', country: 'UK', status: 'available', assignedTo: null }
+      ]);
+      console.log('✅ Default numbers seeded');
+    }
+    const usersCount = await usersCollection.countDocuments();
+    if (usersCount === 0) {
+      await usersCollection.insertOne({
+        balance: 107.800,
+        totalEarned: 107.800,
+        totalOtps: 672,
+        totalNumbers: 1115
+      });
+      console.log('✅ Default user seeded');
+    }
+    const otpsCount = await otpsCollection.countDocuments();
+    if (otpsCount === 0) {
+      await otpsCollection.insertMany([
+        { id: '1', number: '+8801712345678', otp: '123456', service: 'Facebook', status: 'success', timestamp: new Date().toISOString() },
+        { id: '2', number: '+8801812345678', otp: '789012', service: 'Google', status: 'pending', timestamp: new Date().toISOString() },
+        { id: '3', number: '+8801912345678', otp: '345678', service: 'WhatsApp', status: 'success', timestamp: new Date(Date.now() - 600000).toISOString() }
+      ]);
+      console.log('✅ Default OTPs seeded');
+    }
+  } catch (error) {
+    console.error('❌ Seed error:', error);
   }
 }
 
@@ -70,16 +87,21 @@ async function seedDefaultData() {
 //  টেলিগ্রাম ওয়েবহুক হ্যান্ডলার
 // ================================================================
 app.post('/api/telegram-webhook', async (req, res) => {
+  console.log('📨 Webhook received:', req.body);
   try {
     const { message } = req.body;
-    if (!message) return res.sendStatus(200);
+    if (!message) {
+      console.log('⚠️ No message in webhook');
+      return res.sendStatus(200);
+    }
 
     const chatId = message.chat.id;
     const text = message.text || '';
+    console.log(`💬 Message from ${chatId}: ${text}`);
 
     if (text === '/start') {
       await sendTelegramMessage(chatId, `👋 **BD UNIQUE METHOD** বটে স্বাগতম!
-
+      
 আপনি নিচের কমান্ডগুলো ব্যবহার করতে পারেন:
 
 /balance — ব্যালেন্স দেখুন
@@ -90,7 +112,7 @@ app.post('/api/telegram-webhook', async (req, res) => {
     } 
     else if (text === '/help') {
       await sendTelegramMessage(chatId, `📌 **কমান্ডের তালিকা:**
-
+      
 /balance — আপনার ওয়ালেট ব্যালেন্স দেখুন
 /stats — টুডে ও অল-টাইম পরিসংখ্যান দেখুন
 /getnumber — একটি নতুন ভার্চুয়াল নাম্বার নিন
@@ -100,7 +122,7 @@ app.post('/api/telegram-webhook', async (req, res) => {
     else if (text === '/balance') {
       const user = await usersCollection.findOne({});
       await sendTelegramMessage(chatId, `💰 **ওয়ালেট ব্যালেন্স**
-
+      
 ব্যালেন্স: $${user?.balance?.toFixed(3) || '0.000'}
 মোট আয়: $${user?.totalEarned?.toFixed(3) || '0.000'}`);
     }
@@ -110,7 +132,7 @@ app.post('/api/telegram-webhook', async (req, res) => {
       const successOtps = allOtps.filter(o => o.status === 'success').length;
       const totalOtps = allOtps.length;
       await sendTelegramMessage(chatId, `📊 **পরিসংখ্যান**
-
+      
 📱 নাম্বার: ${user?.totalNumbers || 0}
 📨 মোট OTP: ${user?.totalOtps || 0}
 ✅ সফল OTP: ${successOtps}
@@ -126,7 +148,7 @@ app.post('/api/telegram-webhook', async (req, res) => {
           { $set: { status: 'assigned', assignedTo: 'telegram_' + chatId } }
         );
         await sendTelegramMessage(chatId, `✅ **নতুন নাম্বার রিজার্ভ হয়েছে!**
-
+        
 📞 নাম্বার: ${available.number}
 🌍 দেশ: ${available.country}
 🆔 আইডি: ${available.id}`);
@@ -146,20 +168,21 @@ app.post('/api/telegram-webhook', async (req, res) => {
     }
     else {
       await sendTelegramMessage(chatId, `❓ **অজানা কমান্ড!**
-
+      
 সঠিক কমান্ড পেতে /help ব্যবহার করুন।`);
     }
 
     res.sendStatus(200);
   } catch (error) {
-    console.error('টেলিগ্রাম ত্রুটি:', error);
+    console.error('❌ Webhook error:', error);
     res.sendStatus(200);
   }
 });
 
 async function sendTelegramMessage(chatId, text) {
+  console.log(`📤 Sending message to ${chatId}:`, text.substring(0, 50) + '...');
   try {
-    await fetch(`${TELEGRAM_API}/sendMessage`, {
+    const response = await fetch(`${TELEGRAM_API}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
@@ -168,13 +191,15 @@ async function sendTelegramMessage(chatId, text) {
         parse_mode: 'Markdown' 
       })
     });
+    const data = await response.json();
+    console.log('✅ Telegram response:', data);
   } catch (error) {
-    console.error('টেলিগ্রাম পাঠানোর ত্রুটি:', error);
+    console.error('❌ Telegram send error:', error);
   }
 }
 
 // ================================================================
-//  API রাউটস
+//  অন্যান্য API রাউটস
 // ================================================================
 app.get('/api/stats', async (req, res) => {
   try {
@@ -310,10 +335,13 @@ app.post('/api/add-number', async (req, res) => {
 });
 
 // ================================================================
-//  সার্ভার চালু
+//  সার্ভার চালু ও Vercel-এর জন্য export
 // ================================================================
 connectDB().then(() => {
   app.listen(PORT, () => {
     console.log(`✅ BD UNIQUE METHOD Server running at http://localhost:${PORT}`);
   });
 });
+
+// ✅ Vercel Serverless Function-এর জন্য আবশ্যক
+module.exports = app;
