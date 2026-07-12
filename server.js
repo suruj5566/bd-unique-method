@@ -28,6 +28,7 @@ app.use((req, res, next) => {
 const TELEGRAM_BOT_TOKEN = '8806967153:AAFE7X5CS_t7o4FvzuU4x5qK_emgRok6GW0';
 const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
 
+// ✅ এখানে আপনার FASTX API Key ও Base URL আপডেট করা আছে
 const FASTX_API_KEY = 'MURAD_CB2D9D7650B867595C3AE975';
 const FASTX_BASE = 'https://fastxotps.com/api/v1';
 
@@ -80,7 +81,7 @@ async function sendTelegramMessage(chatId, text, extra = {}) {
 }
 
 // ================================================================
-//  FAST X OTP API কল
+//  FAST X OTP API কল (হ্যান্ডলার)
 // ================================================================
 async function callFastXAPI(endpoint, options = {}) {
   const url = `${FASTX_BASE}${endpoint}`;
@@ -111,7 +112,7 @@ async function callFastXAPI(endpoint, options = {}) {
 //  API রাউটস
 // ================================================================
 
-// Get Number
+// 1. Get Number
 app.post('/api/fastx/get-number', async (req, res) => {
   try {
     const { range } = req.body;
@@ -148,7 +149,7 @@ app.post('/api/fastx/get-number', async (req, res) => {
   }
 });
 
-// Check OTP
+// 2. Check OTP
 app.get('/api/fastx/check-otp', async (req, res) => {
   try {
     const { number } = req.query;
@@ -180,7 +181,7 @@ app.get('/api/fastx/check-otp', async (req, res) => {
   }
 });
 
-// Stats
+// 3. Stats
 app.get('/api/stats', async (req, res) => {
   try {
     const user = await usersCollection.findOne({});
@@ -208,7 +209,7 @@ app.get('/api/stats', async (req, res) => {
   }
 });
 
-// OTPs
+// 4. OTPs
 app.get('/api/otps', async (req, res) => {
   try {
     const otps = await otpsCollection.find({}).sort({ timestamp: -1 }).toArray();
@@ -219,7 +220,7 @@ app.get('/api/otps', async (req, res) => {
   }
 });
 
-// Numbers
+// 5. Numbers
 app.get('/api/numbers', async (req, res) => {
   try {
     const numbers = await numbersCollection.find({}).toArray();
@@ -230,7 +231,7 @@ app.get('/api/numbers', async (req, res) => {
   }
 });
 
-// Withdraw
+// 6. Withdraw
 app.post('/api/withdraw', async (req, res) => {
   try {
     const { amount, method } = req.body;
