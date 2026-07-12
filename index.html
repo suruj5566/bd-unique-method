@@ -70,7 +70,7 @@
   </div>
 
   <!-- ============================================================ -->
-  <!-- PAGE: DASHBOARD (বিদ্যমান) -->
+  <!-- PAGE: DASHBOARD -->
   <!-- ============================================================ -->
   <div id="page-dashboard" class="page-section active">
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
@@ -86,7 +86,7 @@
   </div>
 
   <!-- ============================================================ -->
-  <!-- PAGE: GET NUMBER (বিদ্যমান) -->
+  <!-- PAGE: GET NUMBER -->
   <!-- ============================================================ -->
   <div id="page-getnumber" class="page-section">
     <div class="glass-card">
@@ -105,7 +105,7 @@
   </div>
 
   <!-- ============================================================ -->
-  <!-- PAGE: LIVE CONSOLE (বিদ্যমান) -->
+  <!-- PAGE: LIVE CONSOLE -->
   <!-- ============================================================ -->
   <div id="page-liveconsole" class="page-section">
     <div class="glass-card">
@@ -117,7 +117,7 @@
   </div>
 
   <!-- ============================================================ -->
-  <!-- PAGE: BULK FORGOT (নতুন) -->
+  <!-- PAGE: BULK FORGOT -->
   <!-- ============================================================ -->
   <div id="page-bulkforgot" class="page-section">
     <div class="glass-card">
@@ -141,7 +141,7 @@ user1@gmail.com"></textarea>
   </div>
 
   <!-- ============================================================ -->
-  <!-- PAGE: PROFILE (বিদ্যমান) -->
+  <!-- PAGE: PROFILE -->
   <!-- ============================================================ -->
   <div id="page-profile" class="page-section">
     <div class="glass-card">
@@ -156,7 +156,7 @@ user1@gmail.com"></textarea>
   </div>
 
   <!-- ============================================================ -->
-  <!-- PAGE: PAYMENT (বিদ্যমান) -->
+  <!-- PAGE: PAYMENT -->
   <!-- ============================================================ -->
   <div id="page-payment" class="page-section">
     <div class="glass-card">
@@ -198,7 +198,7 @@ user1@gmail.com"></textarea>
   });
 
   // ================================================================
-  //  DASHBOARD STATS (বিদ্যমান)
+  //  DASHBOARD STATS
   // ================================================================
   async function loadStats() {
     try {
@@ -219,7 +219,7 @@ user1@gmail.com"></textarea>
   }
 
   // ================================================================
-  //  OTPs (বিদ্যমান)
+  //  OTPs
   // ================================================================
   async function loadOtps() {
     try {
@@ -242,7 +242,7 @@ user1@gmail.com"></textarea>
   }
 
   // ================================================================
-  //  GET NUMBER (বিদ্যমান)
+  //  GET NUMBER
   // ================================================================
   document.getElementById('getNumberBtn').addEventListener('click', async () => {
     const range = document.getElementById('rangeInput').value.trim() || '4473845XXX';
@@ -288,7 +288,7 @@ user1@gmail.com"></textarea>
   });
 
   // ================================================================
-  //  LIVE CONSOLE (বিদ্যমান)
+  //  LIVE CONSOLE
   // ================================================================
   async function loadLiveConsole() {
     try {
@@ -311,13 +311,13 @@ user1@gmail.com"></textarea>
   }
 
   // ================================================================
-  //  PROFILE & PAYMENT (বিদ্যমান)
+  //  PROFILE & PAYMENT
   // ================================================================
   async function loadProfile() { loadStats(); }
   async function loadPayment() { loadStats(); }
 
   // ================================================================
-  //  WITHDRAW (বিদ্যমান)
+  //  WITHDRAW
   // ================================================================
   document.getElementById('withdrawBtn').addEventListener('click', async () => {
     const method = document.getElementById('withdrawMethod').value;
@@ -342,7 +342,7 @@ user1@gmail.com"></textarea>
   });
 
   // ================================================================
-  //  BULK FORGOT (নতুন)
+  //  BULK FORGOT
   // ================================================================
   document.getElementById('bulkSubmitBtn').addEventListener('click', async () => {
     const text = document.getElementById('bulkNumbers').value;
