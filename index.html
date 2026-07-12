@@ -38,6 +38,8 @@
     .tab-btn:hover{color:var(--text-primary)}
     .page-section{display:none}
     .page-section.active{display:block}
+    .bulk-textarea{width:100%;height:200px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);color:#f1f5f9;padding:12px;border-radius:10px;font-family:'Inter',sans-serif;font-size:.9rem}
+    .bulk-textarea:focus{outline:none;border-color:#f59e0b}
     @media(max-width:640px){.number-hero{font-size:1.8rem}.stat-number{font-size:1.3rem}.glass-card{padding:1.2rem}}
   </style>
 </head>
@@ -62,11 +64,14 @@
     <button class="tab-btn active" data-page="dashboard">📊 Dashboard</button>
     <button class="tab-btn" data-page="getnumber">📱 Get Number</button>
     <button class="tab-btn" data-page="liveconsole">📨 Live Console</button>
+    <button class="tab-btn" data-page="bulkforgot">🔐 Bulk Forgot</button>
     <button class="tab-btn" data-page="profile">👤 Profile</button>
     <button class="tab-btn" data-page="payment">💳 Payment</button>
   </div>
 
-  <!-- DASHBOARD -->
+  <!-- ============================================================ -->
+  <!-- PAGE: DASHBOARD (বিদ্যমান) -->
+  <!-- ============================================================ -->
   <div id="page-dashboard" class="page-section active">
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
       <div class="glass-card"><div class="stat-label">Numbers</div><div class="stat-number" id="statNumbers">0</div></div>
@@ -80,7 +85,9 @@
     </div>
   </div>
 
-  <!-- GET NUMBER -->
+  <!-- ============================================================ -->
+  <!-- PAGE: GET NUMBER (বিদ্যমান) -->
+  <!-- ============================================================ -->
   <div id="page-getnumber" class="page-section">
     <div class="glass-card">
       <h2 class="text-lg font-bold flex items-center gap-2 mb-4"><i data-feather="phone" class="text-[#f59e0b]"></i> Get Number</h2>
@@ -97,7 +104,9 @@
     </div>
   </div>
 
-  <!-- LIVE CONSOLE -->
+  <!-- ============================================================ -->
+  <!-- PAGE: LIVE CONSOLE (বিদ্যমান) -->
+  <!-- ============================================================ -->
   <div id="page-liveconsole" class="page-section">
     <div class="glass-card">
       <h2 class="text-lg font-bold flex items-center gap-2 mb-4"><i data-feather="activity" class="text-[#f59e0b]"></i> Live Console</h2>
@@ -107,7 +116,33 @@
     </div>
   </div>
 
-  <!-- PROFILE -->
+  <!-- ============================================================ -->
+  <!-- PAGE: BULK FORGOT (নতুন) -->
+  <!-- ============================================================ -->
+  <div id="page-bulkforgot" class="page-section">
+    <div class="glass-card">
+      <h2 class="text-lg font-bold flex items-center gap-2 mb-4"><i data-feather="shield" class="text-[#f59e0b]"></i> Bulk Forgot Password</h2>
+      <p class="text-sm text-text-muted mb-4">প্রতি লাইনে একটি করে নাম্বার/ইমেইল দিন। (সর্বোচ্চ ২০০টি)</p>
+      
+      <textarea id="bulkNumbers" class="bulk-textarea" placeholder="+8801712345678
++8801812345678
+user1@gmail.com"></textarea>
+      
+      <div class="flex gap-3 mt-3">
+        <button id="bulkSubmitBtn" class="btn-gold"><i data-feather="send" class="w-4 h-4"></i> সাবমিট করুন</button>
+        <button id="bulkStatusBtn" class="btn-outline"><i data-feather="refresh-cw" class="w-4 h-4"></i> স্ট্যাটাস দেখুন</button>
+      </div>
+      
+      <div id="bulkResult" class="mt-4 p-4 bg-[#0a0e1a] rounded-xl">
+        <p class="text-text-muted text-sm">রেজাল্ট এখানে দেখাবে...</p>
+        <div id="bulkResultList" class="mt-2 max-h-60 overflow-y-auto"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- PAGE: PROFILE (বিদ্যমান) -->
+  <!-- ============================================================ -->
   <div id="page-profile" class="page-section">
     <div class="glass-card">
       <h2 class="text-lg font-bold flex items-center gap-2 mb-4"><i data-feather="user" class="text-[#f59e0b]"></i> Profile</h2>
@@ -120,7 +155,9 @@
     </div>
   </div>
 
-  <!-- PAYMENT -->
+  <!-- ============================================================ -->
+  <!-- PAGE: PAYMENT (বিদ্যমান) -->
+  <!-- ============================================================ -->
   <div id="page-payment" class="page-section">
     <div class="glass-card">
       <h2 class="text-lg font-bold flex items-center gap-2 mb-4"><i data-feather="credit-card" class="text-[#f59e0b]"></i> Payment</h2>
@@ -145,7 +182,9 @@
 <script>
   const API_BASE = window.location.origin;
 
-  // TAB
+  // ================================================================
+  //  TAB NAVIGATION
+  // ================================================================
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -153,10 +192,14 @@
       document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
       document.getElementById('page-' + btn.dataset.page).classList.add('active');
       if (btn.dataset.page === 'liveconsole') loadLiveConsole();
+      if (btn.dataset.page === 'profile') loadProfile();
+      if (btn.dataset.page === 'payment') loadPayment();
     });
   });
 
-  // STATS
+  // ================================================================
+  //  DASHBOARD STATS (বিদ্যমান)
+  // ================================================================
   async function loadStats() {
     try {
       const res = await fetch(`${API_BASE}/api/stats`);
@@ -175,7 +218,9 @@
     } catch (e) { console.error('Stats error:', e); }
   }
 
-  // OTPs
+  // ================================================================
+  //  OTPs (বিদ্যমান)
+  // ================================================================
   async function loadOtps() {
     try {
       const res = await fetch(`${API_BASE}/api/otps`);
@@ -196,7 +241,9 @@
     } catch (e) { console.error('OTPs error:', e); }
   }
 
-  // GET NUMBER
+  // ================================================================
+  //  GET NUMBER (বিদ্যমান)
+  // ================================================================
   document.getElementById('getNumberBtn').addEventListener('click', async () => {
     const range = document.getElementById('rangeInput').value.trim() || '4473845XXX';
     const display = document.getElementById('displayNumber');
@@ -240,7 +287,9 @@
     } catch (e) { alert('Error: ' + e.message); }
   });
 
-  // LIVE CONSOLE
+  // ================================================================
+  //  LIVE CONSOLE (বিদ্যমান)
+  // ================================================================
   async function loadLiveConsole() {
     try {
       const res = await fetch(`${API_BASE}/api/otps`);
@@ -261,7 +310,15 @@
     } catch (e) { console.error('Live console error:', e); }
   }
 
-  // WITHDRAW
+  // ================================================================
+  //  PROFILE & PAYMENT (বিদ্যমান)
+  // ================================================================
+  async function loadProfile() { loadStats(); }
+  async function loadPayment() { loadStats(); }
+
+  // ================================================================
+  //  WITHDRAW (বিদ্যমান)
+  // ================================================================
   document.getElementById('withdrawBtn').addEventListener('click', async () => {
     const method = document.getElementById('withdrawMethod').value;
     const result = document.getElementById('withdrawResult');
@@ -284,7 +341,90 @@
     }
   });
 
-  // INIT
+  // ================================================================
+  //  BULK FORGOT (নতুন)
+  // ================================================================
+  document.getElementById('bulkSubmitBtn').addEventListener('click', async () => {
+    const text = document.getElementById('bulkNumbers').value;
+    const numbers = text.split('\n').map(n => n.trim()).filter(n => n !== '');
+    
+    if (numbers.length === 0) {
+      alert('দয়া করে কমপক্ষে একটি নাম্বার/ইমেইল দিন!');
+      return;
+    }
+    
+    if (numbers.length > 200) {
+      alert('সর্বোচ্চ ২০০টি নাম্বার/ইমেইল দেওয়া যাবে!');
+      return;
+    }
+    
+    const resultDiv = document.getElementById('bulkResult');
+    const resultList = document.getElementById('bulkResultList');
+    resultDiv.innerHTML = '<p class="text-text-muted text-sm">⏳ প্রসেসিং হচ্ছে...</p>';
+    resultList.innerHTML = '';
+    
+    try {
+      const res = await fetch(`${API_BASE}/api/bulk-forgot`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ numbers })
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        let html = '';
+        data.results.forEach((item, index) => {
+          const status = item.success ? '✅' : '❌';
+          const color = item.success ? 'text-[#10b981]' : 'text-red-400';
+          html += `<div class="flex items-center gap-2 text-sm py-1 border-b border-white/5">
+            <span>${index+1}.</span>
+            <span class="font-mono">${item.identifier}</span>
+            <span class="${color}">${status} ${item.message}</span>
+          </div>`;
+        });
+        resultList.innerHTML = html;
+        resultDiv.innerHTML = `<p class="text-text-muted text-sm">✅ ${data.results.filter(r => r.success).length} সফল, ${data.results.filter(r => !r.success).length} ব্যর্থ</p>`;
+      } else {
+        resultDiv.innerHTML = `<p class="text-red-400 text-sm">❌ ${data.message}</p>`;
+      }
+    } catch (e) {
+      resultDiv.innerHTML = `<p class="text-red-400 text-sm">❌ Error: ${e.message}</p>`;
+    }
+  });
+
+  document.getElementById('bulkStatusBtn').addEventListener('click', async () => {
+    const resultDiv = document.getElementById('bulkResult');
+    const resultList = document.getElementById('bulkResultList');
+    
+    try {
+      const res = await fetch(`${API_BASE}/api/bulk-forgot-status`);
+      const data = await res.json();
+      
+      if (data.success && data.results.length > 0) {
+        let html = '';
+        data.results.forEach((item, index) => {
+          const status = item.success ? '✅' : '❌';
+          const color = item.success ? 'text-[#10b981]' : 'text-red-400';
+          html += `<div class="flex items-center gap-2 text-sm py-1 border-b border-white/5">
+            <span>${index+1}.</span>
+            <span class="font-mono">${item.identifier}</span>
+            <span class="${color}">${status} ${item.message}</span>
+          </div>`;
+        });
+        resultList.innerHTML = html;
+        resultDiv.innerHTML = `<p class="text-text-muted text-sm">📋 সর্বশেষ রেজাল্ট</p>`;
+      } else {
+        resultDiv.innerHTML = '<p class="text-text-muted text-sm">📭 এখনো কোনো রেজাল্ট নেই</p>';
+        resultList.innerHTML = '';
+      }
+    } catch (e) {
+      resultDiv.innerHTML = `<p class="text-red-400 text-sm">❌ Error: ${e.message}</p>`;
+    }
+  });
+
+  // ================================================================
+  //  INIT
+  // ================================================================
   document.addEventListener('DOMContentLoaded', () => {
     feather.replace();
     loadStats();
