@@ -1,8 +1,20 @@
-// ================================================================
-//  API রাউটস (সমস্যা সমাধান সহ)
-// ================================================================
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const { MongoClient } = require('mongodb');
+const { v4: uuidv4 } = require('uuid');
 
-// middleware
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// ================================================================
+//  MIDDLEWARE
+// ================================================================
+app.use(cors());
+app.use(bodyParser.json());
+app.use(express.static('.'));
+
+// JSON রেসপন্স ফোর্স করুন
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) {
     res.setHeader('Content-Type', 'application/json');
@@ -10,24 +22,112 @@ app.use((req, res, next) => {
   next();
 });
 
-// 1. Get Number
-app.post('/api/fastx/get-number', async (req, res) => {
+// ================================================================
+//  কনফিগারেশন
+// ================================================================
+const TELEGRAM_BOT_TOKEN = '8806967153:AAFE7X5CS_t7o4FvzuU4x5qK_emgRok6GW0';
+const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
+
+const FASTX_API_KEY = 'MURAD_CB2D9D7650B867595C3AE975';
+const FASTX_BASE = 'https://fastxotps.com/api/v1';
+
+const MONGODB_URI = 'mongodb+srv://surujsarkar01_db_user:hSiXnPCwFKWeChNm@cluster0.uovzwiy.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+const DB_NAME = 'bd_unique_method';
+let db, numbersCollection, otpsCollection, usersCollection;
+
+// ================================================================
+//  MongoDB সংযোগ
+// ================================================================
+async function connectDB() {
   try {
-    const { range } = req.body;
-    const response = await fetch(`${FASTX_BASE}/user/getnum`, {
+    const client = new MongoClient(MONGODB_URI);
+    await client.connect();
+    db = client.db(DB_NAME);
+    numbersCollection = db.collection('numbers');
+    otpsCollection = db.collection('otps');
+    usersCollection = db.collection('users');
+    console.log('✅ MongoDB Connected');
+    
+    const usersCount = await usersCollection.countDocuments();
+    if (usersCount === 0) {
+      await usersCollection.insertOne({
+        balance: 0,
+        totalEarned: 0,
+        totalOtps: 0,
+        totalNumbers: 0,
+        referBalance: 0,
+        referredUsers: []
+      });
+    }
+  } catch (error) {
+    console.error('❌ MongoDB Error:', error);
+  }
+}
+
+// ================================================================
+//  টেলিগ্রাম মেসেজ
+// ================================================================
+async function sendTelegramMessage(chatId, text, extra = {}) {
+  try {
+    await fetch(`${TELEGRAM_API}/sendMessage`, {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'Markdown', ...extra })
+    });
+  } catch (error) {
+    console.error('❌ Telegram send error:', error);
+  }
+}
+
+// ================================================================
+//  FAST X OTP API কল
+// ================================================================
+async function callFastXAPI(endpoint, options = {}) {
+  const url = `${FASTX_BASE}${endpoint}`;
+  try {
+    const response = await fetch(url, {
+      ...options,
       headers: {
         'X-API-KEY': FASTX_API_KEY,
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
+        'Accept': 'application/json',
+        ...options.headers
+      }
+    });
+    const text = await response.text();
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      console.error('FASTX JSON Parse Error:', text.substring(0, 200));
+      return { ok: false, message: 'Invalid response from API' };
+    }
+  } catch (error) {
+    console.error('FASTX API Error:', error);
+    return { ok: false, message: error.message };
+  }
+}
+
+// ================================================================
+//  API রাউটস (সব JSON রেসপন্স নিশ্চিত)
+// ================================================================
+
+// Get Number
+app.post('/api/fastx/get-number', async (req, res) => {
+  try {
+    const { range } = req.body;
+    console.log('📞 Get Number request:', range);
+    
+    const data = await callFastXAPI('/user/getnum', {
+      method: 'POST',
       body: JSON.stringify({
         range: range || '4473845XXX',
         is_national: false,
         remove_plus: false
       })
     });
-    const data = await response.json();
+    
+    console.log('📞 FASTX Response:', data);
+    
     if (data.ok !== false && data.data) {
       const number = data.data?.number || data.data?.copy || 'N/A';
       await numbersCollection.insertOne({
@@ -35,28 +135,39 @@ app.post('/api/fastx/get-number', async (req, res) => {
         number: number,
         country: data.data?.country || 'Unknown',
         status: 'assigned',
-        source: 'fastxotps'
+        source: 'fastxotps',
+        createdAt: new Date()
       });
       await usersCollection.updateOne({}, { $inc: { totalNumbers: 1 } });
-      return res.status(200).json({ success: true, number: data.data });
+      return res.json({ success: true, number: data.data });
+    } else {
+      return res.json({ 
+        success: false, 
+        message: data?.message || 'নাম্বার পাওয়া যায়নি'
+      });
     }
-    return res.status(200).json({ success: false, message: data?.message || 'Failed' });
   } catch (error) {
-    return res.status(200).json({ success: false, message: error.message });
+    console.error('Get Number Error:', error);
+    return res.json({ success: false, message: error.message });
   }
 });
 
-// 2. Check OTP
+// Check OTP
 app.get('/api/fastx/check-otp', async (req, res) => {
   try {
     const { number } = req.query;
+    console.log('🔍 Check OTP:', number);
+    
     if (!number) {
-      return res.status(200).json({ success: false, message: 'Number required' });
+      return res.json({ success: false, message: 'Number required' });
     }
-    const response = await fetch(`${FASTX_BASE}/user/checknum?nomor=${encodeURIComponent(number)}`, {
-      headers: { 'X-API-KEY': FASTX_API_KEY, 'Accept': 'application/json' }
+    
+    const data = await callFastXAPI(`/user/checknum?nomor=${encodeURIComponent(number)}`, {
+      method: 'GET'
     });
-    const data = await response.json();
+    
+    console.log('🔍 FASTX Check Response:', data);
+    
     if (data.ok && data.data) {
       if (data.data.status === 'SUKSES' && data.data.kode_otp) {
         await otpsCollection.insertOne({
@@ -68,21 +179,23 @@ app.get('/api/fastx/check-otp', async (req, res) => {
         });
         await usersCollection.updateOne({}, { $inc: { balance: 0.10, totalEarned: 0.10, totalOtps: 1 } });
       }
-      return res.status(200).json({ success: true, otp: data.data });
+      return res.json({ success: true, otp: data.data });
+    } else {
+      return res.json({ success: false, message: data?.message || 'No OTP found' });
     }
-    return res.status(200).json({ success: false, message: data?.message || 'No OTP found' });
   } catch (error) {
-    return res.status(200).json({ success: false, message: error.message });
+    console.error('Check OTP Error:', error);
+    return res.json({ success: false, message: error.message });
   }
 });
 
-// 3. Stats
+// Stats
 app.get('/api/stats', async (req, res) => {
   try {
     const user = await usersCollection.findOne({});
     const allOtps = await otpsCollection.find({}).toArray();
     const successOtps = allOtps.filter(o => o.status === 'success').length;
-    return res.status(200).json({
+    return res.json({
       success: true,
       today: {
         numbers: user?.totalNumbers || 0,
@@ -99,44 +212,84 @@ app.get('/api/stats', async (req, res) => {
       referBalance: user?.referBalance || 0
     });
   } catch (error) {
-    return res.status(200).json({ success: false, message: error.message });
+    console.error('Stats Error:', error);
+    return res.json({ success: false, message: error.message });
   }
 });
 
-// 4. OTPs
+// OTPs
 app.get('/api/otps', async (req, res) => {
   try {
     const otps = await otpsCollection.find({}).sort({ timestamp: -1 }).toArray();
-    return res.status(200).json({ success: true, otps });
+    return res.json({ success: true, otps });
   } catch (error) {
-    return res.status(200).json({ success: false, message: error.message });
+    console.error('OTPs Error:', error);
+    return res.json({ success: false, message: error.message });
   }
 });
 
-// 5. Numbers
+// Numbers
 app.get('/api/numbers', async (req, res) => {
   try {
     const numbers = await numbersCollection.find({}).toArray();
-    return res.status(200).json({ success: true, numbers });
+    return res.json({ success: true, numbers });
   } catch (error) {
-    return res.status(200).json({ success: false, message: error.message });
+    console.error('Numbers Error:', error);
+    return res.json({ success: false, message: error.message });
   }
 });
 
-// 6. Withdraw
+// Withdraw
 app.post('/api/withdraw', async (req, res) => {
   try {
     const { amount, method } = req.body;
     if (!amount || amount < 1) {
-      return res.status(200).json({ success: false, message: 'Minimum $1.00' });
+      return res.json({ success: false, message: 'Minimum $1.00' });
     }
     const user = await usersCollection.findOne({});
-    if (user.balance < amount) {
-      return res.status(200).json({ success: false, message: 'Insufficient balance' });
+    if (!user || user.balance < amount) {
+      return res.json({ success: false, message: 'Insufficient balance' });
     }
     await usersCollection.updateOne({}, { $inc: { balance: -amount } });
-    return res.status(200).json({ success: true, message: `Withdraw $${amount} via ${method} successful` });
+    return res.json({ success: true, message: `Withdraw $${amount} via ${method} successful` });
   } catch (error) {
-    return res.status(200).json({ success: false, message: error.message });
+    console.error('Withdraw Error:', error);
+    return res.json({ success: false, message: error.message });
   }
 });
+
+// ================================================================
+//  টেলিগ্রাম ওয়েবহুক
+// ================================================================
+app.post('/api/telegram-webhook', async (req, res) => {
+  try {
+    const { message, callback_query } = req.body;
+    if (!message && !callback_query) return res.sendStatus(200);
+    
+    // ... (আপনার আগের টেলিগ্রাম কোড)
+    
+    res.sendStatus(200);
+  } catch (error) {
+    console.error('Webhook Error:', error);
+    res.sendStatus(200);
+  }
+});
+
+// ================================================================
+//  ওয়েবসাইট রুট
+// ================================================================
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/index.html');
+});
+
+// ================================================================
+//  সার্ভার চালু
+// ================================================================
+connectDB().then(() => {
+  app.listen(PORT, () => {
+    console.log(`✅ Server running on port ${PORT}`);
+    console.log(`✅ Website: http://localhost:${PORT}`);
+  });
+});
+
+module.exports = app;
