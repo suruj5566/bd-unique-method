@@ -1,338 +1,647 @@
 <!DOCTYPE html>
 <html lang="bn">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BD UNIQUE METHOD — OTP Dashboard</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box}
-    :root{--bg-primary:#0b0f1a;--bg-card:#111827;--bg-card-hover:#1a2236;--accent-gradient:linear-gradient(135deg,#f59e0b,#fbbf24);--text-primary:#f1f5f9;--text-secondary:#94a3b8;--text-muted:#475569;--radius:16px;--radius-sm:10px}
-    body{background:var(--bg-primary);color:var(--text-primary);font-family:'Inter',sans-serif;min-height:100vh;background-image:radial-gradient(ellipse at 30% 20%,rgba(245,158,11,0.03),transparent 60%)}
-    ::-webkit-scrollbar{width:4px}
-    ::-webkit-scrollbar-track{background:var(--bg-primary)}
-    ::-webkit-scrollbar-thumb{background:#f59e0b;border-radius:10px}
-    .glass-card{background:var(--bg-card);border:1px solid rgba(245,158,11,0.06);border-radius:var(--radius);padding:1.5rem;transition:all .3s ease}
-    .glass-card:hover{background:var(--bg-card-hover);border-color:rgba(245,158,11,0.12);transform:translateY(-2px)}
-    .gradient-text{background:var(--accent-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-size:200% 200%;animation:shimmer 3s ease-in-out infinite}
-    @keyframes shimmer{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
-    .btn-gold{background:linear-gradient(135deg,#f59e0b,#d97706);color:#0b0f1a;font-weight:700;padding:10px 24px;border:none;border-radius:var(--radius-sm);cursor:pointer;transition:all .25s ease;display:inline-flex;align-items:center;gap:8px;font-size:.9rem}
-    .btn-gold:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 0 40px -4px rgba(245,158,11,0.25)}
-    .btn-outline{background:transparent;border:1.5px solid rgba(245,158,11,0.15);color:var(--text-primary);padding:10px 20px;border-radius:var(--radius-sm);cursor:pointer;transition:all .25s ease;display:inline-flex;align-items:center;gap:8px;font-size:.9rem}
-    .btn-outline:hover{border-color:#f59e0b;background:rgba(245,158,11,0.04)}
-    .input-dark{background:rgba(255,255,255,0.03);border:1.5px solid rgba(255,255,255,0.04);color:var(--text-primary);padding:12px 16px;border-radius:var(--radius-sm);width:100%;transition:all .3s ease;font-size:.9rem}
-    .input-dark:focus{outline:none;border-color:#f59e0b;box-shadow:0 0 30px -8px rgba(245,158,11,0.06);background:rgba(255,255,255,0.05)}
-    .input-dark::placeholder{color:var(--text-muted)}
-    .number-hero{font-family:'Inter',sans-serif;font-weight:800;font-size:2.5rem;letter-spacing:2px;background:var(--accent-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;word-break:break-all}
-    .stat-number{font-size:1.8rem;font-weight:800;color:var(--text-primary)}
-    .stat-label{font-size:.65rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);font-weight:600}
-    .otp-item{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);border-radius:var(--radius-sm);padding:.8rem 1rem;margin-bottom:.5rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;transition:all .2s}
-    .otp-item:hover{background:rgba(255,255,255,0.04);border-color:rgba(245,158,11,0.06)}
-    .otp-code{background:rgba(245,158,11,0.06);color:#f59e0b;font-weight:700;padding:.1rem .8rem;border-radius:8px;border:1px solid rgba(245,158,11,0.06);min-width:70px;text-align:center}
-    .tab-btn{padding:.5rem 1.2rem;border-radius:var(--radius-sm);background:transparent;border:1px solid transparent;color:var(--text-muted);cursor:pointer;transition:all .2s;font-size:.85rem}
-    .tab-btn.active{background:rgba(245,158,11,0.06);border-color:rgba(245,158,11,0.06);color:#f59e0b}
-    .tab-btn:hover{color:var(--text-primary)}
-    .page-section{display:none}
-    .page-section.active{display:block}
-    @media(max-width:640px){.number-hero{font-size:1.8rem}.stat-number{font-size:1.3rem}.glass-card{padding:1.2rem}}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OTP Management Platform</title>
+    <style>
+        /* ===== গ্লোবাল স্টাইল ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .app-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+            padding: 30px;
+            transition: all 0.3s ease;
+        }
+
+        /* ===== হেডার ===== */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            color: #333;
+            font-weight: 700;
+        }
+
+        .balance {
+            background: #4CAF50;
+            color: white;
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* ===== মেনু ===== */
+        .menu {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 25px;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 12px;
+        }
+
+        .menu-item {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #555;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex: 1;
+            text-align: center;
+            min-width: 60px;
+        }
+
+        .menu-item:hover {
+            background: #e9ecef;
+        }
+
+        .menu-item.active {
+            background: #667eea;
+            color: white;
+        }
+
+        /* ===== নম্বর ডিসপ্লে ===== */
+        .number-display {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .number-display .label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .number-display .number {
+            font-size: 32px;
+            font-weight: 700;
+            color: #2d3436;
+            letter-spacing: 2px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .number-display .order-id {
+            font-size: 13px;
+            color: #888;
+            margin-top: 8px;
+        }
+
+        /* ===== বাটন ===== */
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+        }
+
+        .btn-success:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(86, 171, 47, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(235, 51, 73, 0.4);
+        }
+
+        /* ===== লোডিং ===== */
+        #loading {
+            display: none;
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin: 15px 0;
+            color: #667eea;
+            font-weight: 500;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* ===== রেজাল্ট বক্স ===== */
+        #result {
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            border: 2px solid #e9ecef;
+            min-height: 80px;
+            transition: all 0.3s;
+            background: #fafafa;
+        }
+
+        #result.info {
+            border-color: #667eea;
+            background: #f0f0ff;
+        }
+
+        #result.success {
+            border-color: #4CAF50;
+            background: #e8f5e9;
+        }
+
+        #result.error {
+            border-color: #f44336;
+            background: #ffebee;
+        }
+
+        #result.warning {
+            border-color: #ff9800;
+            background: #fff3e0;
+        }
+
+        #result .icon {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+
+        #result .message {
+            font-size: 15px;
+            line-height: 1.6;
+            word-break: break-word;
+        }
+
+        #result .timestamp {
+            font-size: 12px;
+            color: #999;
+            margin-top: 10px;
+            display: block;
+        }
+
+        /* ===== অ্যাকশন লগ ===== */
+        .action-log {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            font-size: 13px;
+            color: #666;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .action-log .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .action-log .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-time {
+            color: #999;
+            margin-right: 10px;
+        }
+
+        /* ===== রেস্পন্সিভ ===== */
+        @media (max-width: 600px) {
+            .app-container {
+                padding: 20px;
+            }
+
+            .number-display .number {
+                font-size: 24px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .menu-item {
+                font-size: 12px;
+                padding: 6px 10px;
+            }
+        }
+    </style>
 </head>
 <body>
 
-<div class="max-w-7xl mx-auto px-4 sm:px-6 py-5 space-y-6">
-
-  <!-- HEADER -->
-  <header class="glass-card flex items-center justify-between">
-    <div>
-      <h1 class="text-2xl font-black"><span class="gradient-text">BD UNIQUE METHOD</span></h1>
-      <p class="text-xs text-text-muted tracking-widest uppercase font-medium">OTP Management Platform</p>
+<div class="app-container">
+    
+    <!-- ===== হেডার ===== -->
+    <div class="header">
+        <h1>📱 OTP Platform</h1>
+        <span class="balance">💰 $0.000</span>
     </div>
-    <div class="flex items-center gap-3">
-      <span class="text-sm text-text-muted">Balance:</span>
-      <span class="text-sm font-bold text-[#f59e0b]" id="headerBalance">$0.000</span>
-    </div>
-  </header>
 
-  <!-- TAB NAVIGATION -->
-  <div class="flex flex-wrap gap-2 border-b border-white/5 pb-3">
-    <button class="tab-btn active" data-page="dashboard">📊 Dashboard</button>
-    <button class="tab-btn" data-page="getnumber">📱 Get Number</button>
-    <button class="tab-btn" data-page="liveconsole">📨 Live Console</button>
-    <button class="tab-btn" data-page="profile">👤 Profile</button>
-    <button class="tab-btn" data-page="payment">💳 Payment</button>
-  </div>
-
-  <!-- ============================================================ -->
-  <!-- PAGE: DASHBOARD -->
-  <!-- ============================================================ -->
-  <div id="page-dashboard" class="page-section active">
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-      <div class="glass-card"><div class="stat-label">Numbers</div><div class="stat-number" id="statNumbers">0</div></div>
-      <div class="glass-card"><div class="stat-label">OTPs</div><div class="stat-number" id="statOtps">0</div></div>
-      <div class="glass-card"><div class="stat-label">Success</div><div class="stat-number text-[#10b981]" id="statSuccess">0%</div></div>
-      <div class="glass-card"><div class="stat-label">Earned</div><div class="stat-number text-[#f59e0b]" id="statEarned">0.000</div></div>
+    <!-- ===== মেনু ===== -->
+    <div class="menu">
+        <div class="menu-item active">📊 Dashboard</div>
+        <div class="menu-item" id="getNumberMenu">📞 Get Number</div>
+        <div class="menu-item">🔄 Live Console</div>
+        <div class="menu-item">👤 Profile</div>
+        <div class="menu-item">💳 Payment</div>
     </div>
-    <div class="glass-card">
-      <h3 class="text-sm font-semibold text-text-secondary uppercase tracking-wider mb-3">📈 Recent OTPs</h3>
-      <div id="otpList" class="space-y-2"><p class="text-text-muted text-sm text-center py-4">Loading...</p></div>
-    </div>
-  </div>
 
-  <!-- ============================================================ -->
-  <!-- PAGE: GET NUMBER -->
-  <!-- ============================================================ -->
-  <div id="page-getnumber" class="page-section">
-    <div class="glass-card">
-      <h2 class="text-lg font-bold flex items-center gap-2 mb-4"><i data-feather="phone" class="text-[#f59e0b]"></i> Get Number</h2>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <input id="rangeInput" type="text" placeholder="রেঞ্জ (যেমন: 4473845XXX)" class="input-dark" value="4473845XXX">
-        <input id="orderIdInput" type="text" placeholder="Order ID (ঐচ্ছিক)" class="input-dark">
-      </div>
-      <div class="flex gap-3 mt-3">
-        <button id="getNumberBtn" class="btn-gold flex-1 justify-center"><i data-feather="refresh-cw" class="w-4 h-4"></i> Get Number</button>
-        <button id="checkOtpBtn" class="btn-outline flex-1 justify-center"><i data-feather="search" class="w-4 h-4"></i> Check OTP</button>
-      </div>
-      <div id="numberResult" class="mt-4 p-4 bg-[#0a0e1a] rounded-xl text-center">
-        <p class="text-text-muted text-sm">এখানে নাম্বার দেখাবে</p>
-        <div id="displayNumber" class="number-hero text-3xl mt-2">—</div>
-        <p id="numberStatus" class="text-xs text-text-muted mt-1"></p>
-      </div>
+    <!-- ===== নম্বর ডিসপ্লে ===== -->
+    <div class="number-display">
+        <div class="label">📞 আপনার বর্তমান নম্বর</div>
+        <div class="number" id="displayNumber">4473845XXX</div>
+        <div class="order-id">🆔 Order ID: <span id="orderId">অনলাইনে</span></div>
     </div>
-  </div>
 
-  <!-- ============================================================ -->
-  <!-- PAGE: LIVE CONSOLE -->
-  <!-- ============================================================ -->
-  <div id="page-liveconsole" class="page-section">
-    <div class="glass-card">
-      <h2 class="text-lg font-bold flex items-center gap-2 mb-4"><i data-feather="activity" class="text-[#f59e0b]"></i> Live Console</h2>
-      <div id="liveStream" class="space-y-2 max-h-96 overflow-y-auto">
-        <p class="text-text-muted text-sm text-center py-4">Loading...</p>
-      </div>
+    <!-- ===== বাটন গ্রুপ ===== -->
+    <div class="button-group">
+        <button class="btn btn-primary" id="getNumberBtn">
+            📥 Get Number
+        </button>
+        <button class="btn btn-success" id="checkOtpBtn" disabled>
+            🔍 Check OTP
+        </button>
+        <button class="btn btn-danger" id="clearBtn">
+            🗑️ Clear
+        </button>
     </div>
-  </div>
 
-  <!-- ============================================================ -->
-  <!-- PAGE: PROFILE -->
-  <!-- ============================================================ -->
-  <div id="page-profile" class="page-section">
-    <div class="glass-card">
-      <h2 class="text-lg font-bold flex items-center gap-2 mb-4"><i data-feather="user" class="text-[#f59e0b]"></i> Profile</h2>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div><p class="text-xs text-text-muted">Balance</p><p class="text-sm font-bold text-[#f59e0b]" id="profileBalance">$0.000</p></div>
-        <div><p class="text-xs text-text-muted">Total OTPs</p><p class="text-sm" id="profileOtps">0</p></div>
-        <div><p class="text-xs text-text-muted">Refer Balance</p><p class="text-sm text-[#10b981]" id="profileRefer">$0.000</p></div>
-        <div><p class="text-xs text-text-muted">API Key Status</p><p class="text-sm text-[#10b981]">✔ Active</p></div>
-      </div>
+    <!-- ===== লোডিং ===== -->
+    <div id="loading">
+        <span class="spinner"></span>
+        লোড হচ্ছে, দয়া করে অপেক্ষা করুন...
     </div>
-  </div>
 
-  <!-- ============================================================ -->
-  <!-- PAGE: PAYMENT -->
-  <!-- ============================================================ -->
-  <div id="page-payment" class="page-section">
-    <div class="glass-card">
-      <h2 class="text-lg font-bold flex items-center gap-2 mb-4"><i data-feather="credit-card" class="text-[#f59e0b]"></i> Payment</h2>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div><p class="text-xs text-text-muted">Available Balance</p><p class="text-3xl font-bold text-[#f59e0b]" id="paymentBalance">$0.000</p></div>
-        <div>
-          <p class="text-xs text-text-muted">Withdraw Method</p>
-          <select id="withdrawMethod" class="input-dark text-sm">
-            <option value="bkash">bKash</option>
-            <option value="nagad">Nagad</option>
-            <option value="binance">Binance (USDT)</option>
-          </select>
-          <button id="withdrawBtn" class="btn-gold w-full mt-2"><i data-feather="send" class="w-4 h-4"></i> Withdraw</button>
-          <p id="withdrawResult" class="text-xs text-text-muted mt-2"></p>
+    <!-- ===== রেজাল্ট ===== -->
+    <div id="result">
+        <span class="icon">💡</span>
+        <span class="message">এখানে নম্বর বা OTP দেখাবে</span>
+        <span class="timestamp" id="timestamp"></span>
+    </div>
+
+    <!-- ===== অ্যাকশন লগ ===== -->
+    <div class="action-log" id="actionLog">
+        <div class="log-entry">
+            <span class="log-time">🟢</span>
+            সিস্টেম রেডি - OTP ম্যানেজমেন্ট চালু আছে
         </div>
-      </div>
     </div>
-  </div>
-
 </div>
 
 <script>
-  const API_BASE = window.location.origin;
+    // ==========================================
+    //  সম্পূর্ণ JavaScript লজিক (Supabase API সহ)
+    // ==========================================
 
-  // ================================================================
-  //  TAB NAVIGATION
-  // ================================================================
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
-      document.getElementById('page-' + btn.dataset.page).classList.add('active');
-      if (btn.dataset.page === 'liveconsole') loadLiveConsole();
-      if (btn.dataset.page === 'profile') loadProfile();
-      if (btn.dataset.page === 'payment') loadPayment();
+    // 📌 DOM রেফারেন্স
+    const displayNumber = document.getElementById('displayNumber');
+    const orderId = document.getElementById('orderId');
+    const getNumberBtn = document.getElementById('getNumberBtn');
+    const checkOtpBtn = document.getElementById('checkOtpBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const loading = document.getElementById('loading');
+    const resultDiv = document.getElementById('result');
+    const resultMessage = resultDiv.querySelector('.message');
+    const resultIcon = resultDiv.querySelector('.icon');
+    const timestamp = document.getElementById('timestamp');
+    const actionLog = document.getElementById('actionLog');
+
+    // 📌 স্টেট ভেরিয়েবল
+    let currentNumber = '4473845XXX';
+    let currentOrderId = 'অনলাইনে';
+    let currentOtp = null;
+    let isProcessing = false;
+
+    // ==========================================
+    //  🔥 কনফিগারেশন (আপনার দেওয়া API সহ)
+    // ==========================================
+    const CONFIG = {
+        // এখানে আপনার দেওয়া API URL যোগ করা হয়েছে
+        API_URL: window.location.origin + '/api/get-otp',
+        API_TOKEN: '',
+        TEST_MODE: false // 👈 false করে দেওয়া হয়েছে (আসল API ব্যবহার করবে)
+    };
+
+    // ==========================================
+    //  ইউটিলিটি ফাংশন
+    // ==========================================
+
+    // লগ এন্ট্রি যোগ করা
+    function addLog(message, type = 'info') {
+        const entry = document.createElement('div');
+        entry.className = 'log-entry';
+        const time = new Date().toLocaleTimeString();
+        const emoji = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+        entry.innerHTML = `<span class="log-time">${emoji} ${time}</span> ${message}`;
+        actionLog.prepend(entry);
+        
+        // বেশি হলে ডিলিট
+        while (actionLog.children.length > 50) {
+            actionLog.removeChild(actionLog.lastChild);
+        }
+    }
+
+    // রেজাল্ট আপডেট করা
+    function setResult(message, type = 'info', icon = '💡') {
+        resultDiv.className = type;
+        resultIcon.textContent = icon;
+        resultMessage.textContent = message;
+        timestamp.textContent = new Date().toLocaleString();
+    }
+
+    // লোডিং শো/হাইড
+    function setLoading(show) {
+        loading.style.display = show ? 'block' : 'none';
+        getNumberBtn.disabled = show;
+        checkOtpBtn.disabled = show || !currentOtp;
+    }
+
+    // ==========================================
+    //  📞 মেইন API কল ফাংশন (Supabase API)
+    // ==========================================
+
+    async function fetchNumberAndOTP() {
+        if (isProcessing) return;
+        isProcessing = true;
+
+        setLoading(true);
+        setResult('⏳ সার্ভার থেকে ডেটা আনা হচ্ছে...', 'info', '⏳');
+        addLog('নতুন নম্বর রিকোয়েস্ট পাঠানো হচ্ছে...', 'info');
+
+        try {
+            // 🔥 আসল API কল (Supabase)
+            const response = await fetch(CONFIG.API_URL, {
+                method: 'POST', // POST method ব্যবহার করছি
+                headers: {
+                    'Content-Type': 'application/json',
+                    // যদি টোকেন লাগে:
+                    // 'Authorization': `Bearer ${CONFIG.API_TOKEN}`
+                },
+                // কোনো body প্রয়োজন নেই, সার্ভার নিজেই জেনারেট করবে
+            });
+
+            // 📌 রেসপন্স টেক্সট হিসেবে পড়া
+            const text = await response.text();
+
+            // ❌ চেক করা HTML কিনা
+            if (text.trim().startsWith('<')) {
+                // HTML পেয়েছি → JSON নয় → Error
+                const errorMsg = '⚠️ সার্ভার HTML রেসপন্স দিয়েছে (JSON নয়)। হয়তো সেশন শেষ বা URL ভুল।';
+                setResult(errorMsg, 'error', '🚫');
+                addLog('❌ HTML রেসপন্স পেয়েছি!', 'error');
+                console.error('HTML রেসপন্স:', text.substring(0, 500));
+                
+                // ডিবাগ তথ্য দেখানো
+                if (text.includes('login') || text.includes('signin')) {
+                    setResult('🔐 লগইন পেজ রিটার্ন হয়েছে। দয়া করে লগইন করুন।', 'error', '🔐');
+                } else if (text.includes('404')) {
+                    setResult('📁 404 নট ফাউন্ড - API এন্ডপয়েন্ট ঠিক নেই।', 'error', '📁');
+                } else if (text.includes('500')) {
+                    setResult('⚡ সার্ভার এরর (500) - কিছুক্ষণ পরে চেষ্টা করুন।', 'error', '⚡');
+                }
+                
+                return;
+            }
+
+            // ✅ JSON পার্স করা
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (parseError) {
+                setResult('❌ JSON পার্স করতে পারিনি। রেসপন্স ফরম্যাট ঠিক নয়।', 'error', '🚫');
+                addLog(`❌ JSON পার্স এরর: ${parseError.message}`, 'error');
+                console.error('পার্স এরর, রেসপন্স:', text);
+                return;
+            }
+
+            // 📊 ডেটা প্রসেস করা
+            console.log('📦 ডেটা:', data);
+
+            if (!data.success) {
+                setResult(`❌ সার্ভার বলছে: ${data.message || 'অজানা ত্রুটি'}`, 'error', '🚫');
+                addLog(`❌ API ত্রুটি: ${data.message}`, 'error');
+                return;
+            }
+
+            // ✅ নম্বর সেট করা
+            if (data.number) {
+                currentNumber = data.number;
+                displayNumber.textContent = currentNumber;
+                addLog(`📞 নতুন নম্বর: ${currentNumber}`, 'success');
+            }
+
+            // ✅ অর্ডার আইডি সেট
+            if (data.orderId) {
+                currentOrderId = data.orderId;
+                orderId.textContent = currentOrderId;
+            }
+
+            // ✅ OTP সেট
+            if (data.otp) {
+                currentOtp = data.otp;
+                checkOtpBtn.disabled = false;
+                setResult(`✅ নতুন OTP জেনারেট হয়েছে: ${currentOtp}`, 'success', '✅');
+                addLog(`🔑 OTP প্রাপ্ত: ${currentOtp}`, 'success');
+            } else {
+                // যদি OTP না আসে (প্রোডাকশনে)
+                setResult(`📞 নম্বর পাওয়া গেছে: ${currentNumber}। OTP আপনার ফোনে পাঠানো হয়েছে।`, 'info', '📞');
+                addLog('📱 OTP ফোনে পাঠানো হয়েছে', 'info');
+                
+                // ডেভ মোডে OTP দেখানোর জন্য
+                if (data.message && data.message.includes('ডেভ')) {
+                    setResult(`📞 নম্বর: ${currentNumber}\n💡 ডেভ মোড: OTP দেখুন - ${data.otp || 'OTP জেনারেট হয়েছে'}`, 'info', '💡');
+                }
+            }
+
+        } catch (error) {
+            // ❌ নেটওয়ার্ক বা অন্য কোন এরর
+            setResult(`❌ নেটওয়ার্ক ত্রুটি: ${error.message}`, 'error', '🚫');
+            addLog(`❌ এরর: ${error.message}`, 'error');
+            console.error('ফুল এরর:', error);
+        } finally {
+            setLoading(false);
+            isProcessing = false;
+        }
+    }
+
+    // ==========================================
+    //  🔍 OTP চেক ফাংশন
+    // ==========================================
+
+    async function checkOTP() {
+        if (!currentOtp) {
+            setResult('⚠️ প্রথমে "Get Number" বাটনে ক্লিক করুন।', 'warning', '⚠️');
+            addLog('⚠️ OTP নেই, আগে নম্বর নিন', 'warning');
+            return;
+        }
+
+        setLoading(true);
+        setResult(`🔍 OTP ভেরিফাই করা হচ্ছে...`, 'info', '🔍');
+        addLog(`🔍 OTP চেক করা হচ্ছে: ${currentOtp}`, 'info');
+
+        try {
+            // 🔥 OTP ভেরিফাই API কল
+            const response = await fetch('/api/verify-otp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    phoneNumber: currentNumber,
+                    otp: currentOtp
+                })
+            });
+
+            const data = await response.json();
+            console.log('🔍 ভেরিফাই রেসপন্স:', data);
+
+            if (data.success) {
+                setResult(`✅ OTP সঠিক! (${currentOtp})`, 'success', '✅');
+                addLog(`✅ OTP ভেরিফাইড: ${currentOtp}`, 'success');
+                currentOtp = null;
+                checkOtpBtn.disabled = true;
+            } else {
+                setResult(`❌ ${data.message || 'OTP ভুল!'}`, 'error', '❌');
+                addLog(`❌ OTP ভেরিফাই ব্যর্থ`, 'error');
+            }
+
+        } catch (error) {
+            setResult(`❌ ভেরিফাই করতে ব্যর্থ: ${error.message}`, 'error', '🚫');
+            addLog(`❌ ভেরিফাই এরর: ${error.message}`, 'error');
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    // ==========================================
+    //  🗑️ ক্লিয়ার ফাংশন
+    // ==========================================
+
+    function clearAll() {
+        currentOtp = null;
+        checkOtpBtn.disabled = true;
+        setResult('🧹 সব ক্লিয়ার করা হয়েছে। নতুন নম্বর নিন।', 'info', '🧹');
+        addLog('🧹 ক্লিয়ার করা হয়েছে', 'info');
+        // নম্বর কিন্তু রেখে দিচ্ছি
+    }
+
+    // ==========================================
+    //  🎯 ইভেন্ট লিসেনার
+    // ==========================================
+
+    // Get Number
+    getNumberBtn.addEventListener('click', fetchNumberAndOTP);
+
+    // Check OTP
+    checkOtpBtn.addEventListener('click', checkOTP);
+
+    // Clear
+    clearBtn.addEventListener('click', clearAll);
+
+    // মেনু ক্লিক (ডেমো)
+    document.querySelectorAll('.menu-item').forEach(item => {
+        item.addEventListener('click', function() {
+            document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+            this.classList.add('active');
+            addLog(`📂 মেনু: ${this.textContent}`, 'info');
+        });
     });
-  });
 
-  // ================================================================
-  //  DASHBOARD STATS
-  // ================================================================
-  async function loadStats() {
-    try {
-      const res = await fetch(`${API_BASE}/api/stats`);
-      const data = await res.json();
-      if (data.success) {
-        document.getElementById('statNumbers').textContent = data.allTime.numbers;
-        document.getElementById('statOtps').textContent = data.allTime.otps;
-        document.getElementById('statSuccess').textContent = data.allTime.success;
-        document.getElementById('statEarned').textContent = data.allTime.earned.toFixed(3);
-        document.getElementById('headerBalance').textContent = '$' + data.balance.toFixed(3);
-        document.getElementById('profileBalance').textContent = '$' + data.balance.toFixed(3);
-        document.getElementById('profileOtps').textContent = data.allTime.otps;
-        document.getElementById('profileRefer').textContent = '$' + (data.referBalance || 0).toFixed(3);
-        document.getElementById('paymentBalance').textContent = '$' + data.balance.toFixed(3);
-      }
-    } catch (e) { console.error('Stats error:', e); }
-  }
+    // ==========================================
+    //  🚀 ইনিশিয়ালাইজ
+    // ==========================================
 
-  // ================================================================
-  //  OTPs
-  // ================================================================
-  async function loadOtps() {
-    try {
-      const res = await fetch(`${API_BASE}/api/otps`);
-      const data = await res.json();
-      const container = document.getElementById('otpList');
-      if (data.success && data.otps.length > 0) {
-        container.innerHTML = data.otps.slice(0, 10).map(o => `
-          <div class="flex items-center justify-between text-sm p-2 bg-white/5 rounded-lg">
-            <span class="font-mono">${o.number || 'N/A'}</span>
-            <span class="text-[#f59e0b]">${o.otp || '—'}</span>
-            <span class="text-text-muted text-xs">${o.service || 'Unknown'}</span>
-            <span class="${o.status === 'success' ? 'text-[#10b981]' : 'text-yellow-400'}">${o.status || ''}</span>
-          </div>
-        `).join('');
-      } else {
-        container.innerHTML = '<p class="text-text-muted text-sm text-center py-4">No OTPs found</p>';
-      }
-    } catch (e) { console.error('OTPs error:', e); }
-  }
+    console.log('🚀 OTP Management Platform Started');
+    console.log(`📌 API URL: ${CONFIG.API_URL}`);
+    console.log(`📌 টেস্ট মোড: ${CONFIG.TEST_MODE ? 'চালু' : 'বন্ধ'}`);
+    
+    addLog('🚀 সিস্টেম চালু হয়েছে (Supabase API সংযুক্ত)', 'success');
+    setResult('💡 "Get Number" বাটনে ক্লিক করুন নতুন নম্বর পেতে', 'info', '💡');
 
-  // ================================================================
-  //  GET NUMBER
-  // ================================================================
-  document.getElementById('getNumberBtn').addEventListener('click', async () => {
-    const range = document.getElementById('rangeInput').value.trim() || '4473845XXX';
-    const display = document.getElementById('displayNumber');
-    const status = document.getElementById('numberStatus');
-    display.textContent = '⏳';
-    status.textContent = 'নাম্বার নেওয়া হচ্ছে...';
-    try {
-      const res = await fetch(`${API_BASE}/api/get-number`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ range })
-      });
-      const data = await res.json();
-      if (data.success) {
-        display.textContent = data.number?.number || 'N/A';
-        status.textContent = `✅ ${data.number?.country || 'Unknown'}`;
-        loadStats();
-        loadOtps();
-      } else {
-        display.textContent = '❌';
-        status.textContent = data.message || 'ব্যর্থ!';
-      }
-    } catch (e) {
-      display.textContent = '⚠️';
-      status.textContent = 'Error: ' + e.message;
+    // সার্ভার হেলথ চেক
+    async function checkHealth() {
+        try {
+            const response = await fetch('/api/health');
+            const data = await response.json();
+            if (data.status === '🟢 OK') {
+                addLog('✅ সার্ভার সংযোগ OK', 'success');
+                console.log('✅ সার্ভার হেলথ:', data);
+            }
+        } catch (error) {
+            addLog('⚠️ সার্ভার হেলথ চেক ব্যর্থ', 'error');
+        }
     }
-  });
+    checkHealth();
 
-  // ================================================================
-  //  CHECK OTP
-  // ================================================================
-  document.getElementById('checkOtpBtn').addEventListener('click', async () => {
-    const orderId = document.getElementById('orderIdInput').value.trim();
-    if (!orderId) {
-      alert('দয়া করে Order ID দিন!');
-      return;
-    }
-    try {
-      const res = await fetch(`${API_BASE}/api/check-otp?orderId=${orderId}`);
-      const data = await res.json();
-      if (data.success && data.otp) {
-        alert(`📱 ${data.otp.number}\n🔑 OTP: ${data.otp.otp || data.otp.sms || 'পাওয়া যায়নি'}`);
-        loadOtps();
-      } else {
-        alert(data.message || 'কোনো তথ্য পাওয়া যায়নি');
-      }
-    } catch (e) { alert('Error: ' + e.message); }
-  });
-
-  // ================================================================
-  //  LIVE CONSOLE
-  // ================================================================
-  async function loadLiveConsole() {
-    try {
-      const res = await fetch(`${API_BASE}/api/otps`);
-      const data = await res.json();
-      const container = document.getElementById('liveStream');
-      if (data.success && data.otps.length > 0) {
-        container.innerHTML = data.otps.slice(0, 20).map(o => `
-          <div class="flex items-center justify-between text-sm p-2 bg-white/5 rounded-lg">
-            <span class="text-text-muted text-xs">${o.timestamp ? new Date(o.timestamp).toLocaleTimeString() : ''}</span>
-            <span class="font-mono">${o.number || 'N/A'}</span>
-            <span class="text-[#f59e0b]">${o.otp || '—'}</span>
-            <span class="text-text-muted text-xs">${o.service || 'Unknown'}</span>
-          </div>
-        `).join('');
-      } else {
-        container.innerHTML = '<p class="text-text-muted text-sm text-center py-4">No OTPs</p>';
-      }
-    } catch (e) { console.error('Live console error:', e); }
-  }
-
-  // ================================================================
-  //  PROFILE & PAYMENT
-  // ================================================================
-  async function loadProfile() { loadStats(); }
-  async function loadPayment() { loadStats(); }
-
-  // ================================================================
-  //  WITHDRAW
-  // ================================================================
-  document.getElementById('withdrawBtn').addEventListener('click', async () => {
-    const method = document.getElementById('withdrawMethod').value;
-    const result = document.getElementById('withdrawResult');
-    result.innerHTML = '⏳ Processing...';
-    try {
-      const res = await fetch(`${API_BASE}/api/withdraw`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: 1, method })
-      });
-      const data = await res.json();
-      if (data.success) {
-        result.innerHTML = `<span class="text-[#10b981]">✅ ${data.message}</span>`;
-        loadStats();
-      } else {
-        result.innerHTML = `<span class="text-red-400">❌ ${data.message}</span>`;
-      }
-    } catch (e) {
-      result.innerHTML = `<span class="text-red-400">Error: ${e.message}</span>`;
-    }
-  });
-
-  // ================================================================
-  //  INIT
-  // ================================================================
-  document.addEventListener('DOMContentLoaded', () => {
-    feather.replace();
-    loadStats();
-    loadOtps();
-    setInterval(loadStats, 30000);
-    setInterval(loadOtps, 15000);
-  });
 </script>
 
 </body>
