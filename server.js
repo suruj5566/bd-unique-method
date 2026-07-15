@@ -3,8 +3,6 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const { MongoClient } = require('mongodb');
 const { v4: uuidv4 } = require('uuid');
-const puppeteer = require('puppeteer');
-const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,27 +12,24 @@ app.use(bodyParser.json());
 app.use(express.static('.'));
 
 // ================================================================
-//  কনফিগারেশন
+//  TELEGRAM BOT TOKEN
 // ================================================================
 const TELEGRAM_BOT_TOKEN = '8806967153:AAFE7X5CS_t7o4FvzuU4x5qK_emgRok6GW0';
 const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
 
-const FASTX_API_KEY = 'MURAD_CB2D9D7650B867595C3AE975';
-const FASTX_BASE = 'https://fastxotps.com/api/v1';
+// ================================================================
+//  OTP API (SMSPool) — আপনার API Key
+// ================================================================
+const OTP_API_KEY = 'nx_6pBZ1wxR5cQkx5tSBQi9L_zavkrNdzU9eYxXOg';
+const OTP_API_BASE = 'https://api.smspool.net';
 
+// ================================================================
+//  MONGODB
+// ================================================================
 const MONGODB_URI = 'mongodb+srv://surujsarkar01_db_user:hSiXnPCwFKWeChNm@cluster0.uovzwiy.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
 const DB_NAME = 'bd_unique_method';
 let db, numbersCollection, otpsCollection, usersCollection;
 
-// Proxy List (আপনার নিজের প্রোক্সি যোগ করুন)
-const PROXY_LIST = [
-  // 'http://user:pass@proxy1:port',
-  // 'http://user:pass@proxy2:port',
-];
-
-// ================================================================
-//  MongoDB সংযোগ
-// ================================================================
 async function connectDB() {
   try {
     const client = new MongoClient(MONGODB_URI);
@@ -44,7 +39,6 @@ async function connectDB() {
     otpsCollection = db.collection('otps');
     usersCollection = db.collection('users');
     console.log('✅ MongoDB Connected');
-    
     const usersCount = await usersCollection.countDocuments();
     if (usersCount === 0) {
       await usersCollection.insertOne({
@@ -62,7 +56,7 @@ async function connectDB() {
 }
 
 // ================================================================
-//  টেলিগ্রাম ফাংশন
+//  TELEGRAM FUNCTIONS
 // ================================================================
 async function sendTelegramMessage(chatId, text, extra = {}) {
   try {
@@ -77,174 +71,78 @@ async function sendTelegramMessage(chatId, text, extra = {}) {
 }
 
 // ================================================================
-//  FAST X OTP API (বিদ্যমান)
+//  OTP API FUNCTIONS (GET NUMBER & CHECK OTP)
 // ================================================================
-async function callFastXAPI(endpoint, options = {}) {
-  const url = `${FASTX_BASE}${endpoint}`;
-  try {
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        'X-API-KEY': FASTX_API_KEY,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        ...options.headers
-      }
-    });
-    const text = await response.text();
-    try {
-      return JSON.parse(text);
-    } catch (e) {
-      return { ok: false, message: 'Invalid JSON response' };
-    }
-  } catch (error) {
-    return { ok: false, message: error.message };
-  }
-}
 
-// ================================================================
-//  BULK FORGOT PASSWORD (নতুন ফিচার)
-// ================================================================
-async function forgotPasswordWithPuppeteer(identifier, proxy = null) {
-  const args = ['--no-sandbox', '--disable-setuid-sandbox'];
-  if (proxy) args.push(`--proxy-server=${proxy}`);
-  
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: args
-  });
-  
+app.post('/api/get-number', async (req, res) => {
   try {
-    const page = await browser.newPage();
-    await page.goto('https://www.facebook.com/login/identify/', { 
-      waitUntil: 'networkidle2',
-      timeout: 30000 
-    });
-    
-    await page.type('input[name="email"]', identifier);
-    await page.click('button[type="submit"]');
-    await page.waitForTimeout(3000);
-    
-    const url = page.url();
-    if (url.includes('confirm')) {
-      return { success: true, message: 'OTP পাঠানো হয়েছে' };
-    } else {
-      return { success: false, message: 'ব্যর্থ হয়েছে' };
-    }
-  } catch (error) {
-    return { success: false, message: error.message };
-  } finally {
-    await browser.close();
-  }
-}
-
-// Bulk Forgot API
-app.post('/api/bulk-forgot', async (req, res) => {
-  try {
-    const { numbers } = req.body;
-    if (!numbers || !Array.isArray(numbers) || numbers.length === 0) {
-      return res.json({ success: false, message: 'কোনো নাম্বার নেই' });
-    }
-    
-    const results = [];
-    for (let i = 0; i < numbers.length; i++) {
-      const proxy = PROXY_LIST.length > 0 ? PROXY_LIST[i % PROXY_LIST.length] : null;
-      const result = await forgotPasswordWithPuppeteer(numbers[i], proxy);
-      results.push({
-        identifier: numbers[i],
-        success: result.success,
-        message: result.message
-      });
-      
-      // ৩ সেকেন্ড বিরতি (IP ব্লক এড়াতে)
-      await new Promise(resolve => setTimeout(resolve, 3000));
-    }
-    
-    // রেজাল্ট JSON ফাইলে সেভ করুন
-    fs.writeFileSync('results.json', JSON.stringify(results, null, 2));
-    
-    return res.json({ success: true, results });
-  } catch (error) {
-    return res.json({ success: false, message: error.message });
-  }
-});
-
-// Bulk Forgot Status
-app.get('/api/bulk-forgot-status', (req, res) => {
-  try {
-    const data = fs.readFileSync('results.json', 'utf8');
-    const results = JSON.parse(data);
-    return res.json({ success: true, results });
-  } catch {
-    return res.json({ success: true, results: [] });
-  }
-});
-
-// ================================================================
-//  বিদ্যমান API রাউটস
-// ================================================================
-app.post('/api/fastx/get-number', async (req, res) => {
-  try {
-    const { range } = req.body;
-    const data = await callFastXAPI('/user/getnum', {
+    const { country, service } = req.body;
+    const response = await fetch(`${OTP_API_BASE}/purchase/1`, {
       method: 'POST',
-      body: JSON.stringify({
-        range: range || '4473845XXX',
-        is_national: false,
-        remove_plus: false
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        api_key: OTP_API_KEY,
+        country: country || 'US',
+        service: service || 'google'
       })
     });
-    
-    if (data.ok !== false && data.data) {
-      const number = data.data?.number || data.data?.copy || 'N/A';
+    const data = await response.json();
+    if (data.success !== false && data.number) {
       await numbersCollection.insertOne({
-        id: number,
-        number: number,
-        country: data.data?.country || 'Unknown',
+        id: data.order_id || data.id || 'N/A',
+        number: data.number,
+        country: data.country || country,
         status: 'assigned',
-        source: 'fastxotps',
+        source: 'smspool',
+        orderId: data.order_id || data.id,
         createdAt: new Date()
       });
       await usersCollection.updateOne({}, { $inc: { totalNumbers: 1 } });
-      return res.json({ success: true, number: data.data });
+      return res.json({ success: true, number: data });
     } else {
-      return res.json({ success: false, message: data?.message || 'নাম্বার পাওয়া যায়নি' });
+      return res.json({ success: false, message: data.message || 'Failed to get number' });
     }
   } catch (error) {
     return res.json({ success: false, message: error.message });
   }
 });
 
-app.get('/api/fastx/check-otp', async (req, res) => {
+app.get('/api/check-otp', async (req, res) => {
   try {
-    const { number } = req.query;
-    if (!number) {
-      return res.json({ success: false, message: 'Number required' });
+    const { orderId } = req.query;
+    if (!orderId) {
+      return res.json({ success: false, message: 'Order ID required' });
     }
-    const data = await callFastXAPI(`/user/checknum?nomor=${encodeURIComponent(number)}`, {
-      method: 'GET'
+    const response = await fetch(`${OTP_API_BASE}/sms/1/${orderId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ api_key: OTP_API_KEY })
     });
-    
-    if (data.ok && data.data) {
-      if (data.data.status === 'SUKSES' && data.data.kode_otp) {
-        await otpsCollection.insertOne({
-          number: data.data.nomor,
-          otp: data.data.kode_otp,
-          service: 'FASTXOTPS',
-          status: 'success',
-          timestamp: new Date().toISOString()
-        });
-        await usersCollection.updateOne({}, { $inc: { balance: 0.10, totalEarned: 0.10, totalOtps: 1 } });
-      }
-      return res.json({ success: true, otp: data.data });
+    const data = await response.json();
+    if (data.success !== false && data.sms) {
+      const otpMatch = data.sms.match(/\b\d{4,6}\b/);
+      await otpsCollection.insertOne({
+        number: data.number || 'N/A',
+        otp: otpMatch ? otpMatch[0] : data.sms,
+        message: data.sms,
+        service: 'SMSPool',
+        status: 'success',
+        timestamp: new Date().toISOString(),
+        orderId: orderId
+      });
+      await usersCollection.updateOne({}, { $inc: { balance: 0.10, totalEarned: 0.10, totalOtps: 1 } });
+      return res.json({ success: true, otp: data });
     } else {
-      return res.json({ success: false, message: data?.message || 'No OTP found' });
+      return res.json({ success: false, message: data.message || 'No OTP found' });
     }
   } catch (error) {
     return res.json({ success: false, message: error.message });
   }
 });
 
+// ================================================================
+//  EXISTING API ROUTES
+// ================================================================
 app.get('/api/stats', async (req, res) => {
   try {
     const user = await usersCollection.findOne({});
@@ -307,13 +205,12 @@ app.post('/api/withdraw', async (req, res) => {
 });
 
 // ================================================================
-//  টেলিগ্রাম ওয়েবহুক
+//  TELEGRAM WEBHOOK
 // ================================================================
 app.post('/api/telegram-webhook', async (req, res) => {
   try {
     const { message, callback_query } = req.body;
     if (!message && !callback_query) return res.sendStatus(200);
-    
     const mainMenu = {
       reply_markup: {
         inline_keyboard: [
@@ -324,41 +221,30 @@ app.post('/api/telegram-webhook', async (req, res) => {
         ]
       }
     };
-    
     if (callback_query) {
       const chatId = callback_query.message.chat.id;
       const data = callback_query.data;
-
       if (data === 'get_number') {
-        await sendTelegramMessage(chatId,
-          `📱 **প্ল্যাটফর্ম সিলেক্ট করুন**`,
-          {
-            reply_markup: {
-              inline_keyboard: [
-                [{ text: 'Facebook (1%)', callback_data: 'platform_facebook' }],
-                [{ text: 'Instagram (1%)', callback_data: 'platform_instagram' }],
-                [{ text: 'WhatsApp (2%)', callback_data: 'platform_whatsapp' }],
-                [{ text: 'Telegram (1%)', callback_data: 'platform_telegram' }],
-                [{ text: '🔙 ফিরে যান', callback_data: 'back_menu' }]
-              ]
-            }
+        await sendTelegramMessage(chatId, `📱 **প্ল্যাটফর্ম সিলেক্ট করুন**`, {
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: 'Facebook (1%)', callback_data: 'platform_facebook' }],
+              [{ text: 'Instagram (1%)', callback_data: 'platform_instagram' }],
+              [{ text: 'WhatsApp (2%)', callback_data: 'platform_whatsapp' }],
+              [{ text: 'Telegram (1%)', callback_data: 'platform_telegram' }],
+              [{ text: '🔙 ফিরে যান', callback_data: 'back_menu' }]
+            ]
           }
-        );
+        });
       }
       else if (data.startsWith('platform_')) {
         const platform = data.replace('platform_', '');
-        await sendTelegramMessage(chatId,
-          `✅ **${platform.toUpperCase()}** সিলেক্ট করা হয়েছে!\n\nএখন রেঞ্জ দিন (যেমন: 4473845XXX):`
-        );
+        await sendTelegramMessage(chatId, `✅ **${platform.toUpperCase()}** সিলেক্ট করা হয়েছে!\n\nএখন রেঞ্জ দিন (যেমন: 4473845XXX):`);
       }
       else if (data === 'balance') {
         const user = await usersCollection.findOne({});
         await sendTelegramMessage(chatId,
-          `💰 **আপনার ব্যালেন্স**\n\n` +
-          `ব্যালেন্স: $${user?.balance?.toFixed(3) || '0.000'}\n` +
-          `মোট আয়: $${user?.totalEarned?.toFixed(3) || '0.000'}\n` +
-          `রেফার বোনাস: $${user?.referBalance?.toFixed(3) || '0.000'}\n` +
-          `মোট OTP: ${user?.totalOtps || 0}`,
+          `💰 **আপনার ব্যালেন্স**\n\nব্যালেন্স: $${user?.balance?.toFixed(3) || '0.000'}\nমোট আয়: $${user?.totalEarned?.toFixed(3) || '0.000'}\nরেফার বোনাস: $${user?.referBalance?.toFixed(3) || '0.000'}\nমোট OTP: ${user?.totalOtps || 0}`,
           { reply_markup: { inline_keyboard: [[{ text: '🔙 মেনু', callback_data: 'back_menu' }]] } }
         );
       }
@@ -380,16 +266,12 @@ app.post('/api/telegram-webhook', async (req, res) => {
       }
       else if (data === 'refer') {
         const referLink = `https://t.me/BDUNIQUE_METHOD_bot?start=ref_${chatId}`;
-        await sendTelegramMessage(chatId,
-          `🔗 **রেফার লিংক**\n\n${referLink}`,
-          { reply_markup: { inline_keyboard: [[{ text: '🔙 মেনু', callback_data: 'back_menu' }]] } }
-        );
+        await sendTelegramMessage(chatId, `🔗 **রেফার লিংক**\n\n${referLink}`, {
+          reply_markup: { inline_keyboard: [[{ text: '🔙 মেনু', callback_data: 'back_menu' }]] }
+        });
       }
       else if (data === 'back_menu') {
-        await sendTelegramMessage(chatId,
-          `👋 **BD UNIQUE METHOD** বটে ফিরে আসুন!`,
-          mainMenu
-        );
+        await sendTelegramMessage(chatId, `👋 **BD UNIQUE METHOD** বটে ফিরে আসুন!`, mainMenu);
       }
       else if (data.startsWith('withdraw_')) {
         const method = data.replace('withdraw_', '');
@@ -400,12 +282,9 @@ app.post('/api/telegram-webhook', async (req, res) => {
       }
       return res.sendStatus(200);
     }
-
-    // টেক্সট মেসেজ
     if (!message) return res.sendStatus(200);
     const chatId = message.chat.id;
     const text = message.text || '';
-
     if (text === '/start') {
       await sendTelegramMessage(chatId, `👋 **BD UNIQUE METHOD** বটে স্বাগতম!`, mainMenu);
     } else {
@@ -419,14 +298,14 @@ app.post('/api/telegram-webhook', async (req, res) => {
 });
 
 // ================================================================
-//  ওয়েবসাইট রুট
+//  WEBSITE ROUTE
 // ================================================================
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/index.html');
 });
 
 // ================================================================
-//  সার্ভার চালু
+//  START SERVER
 // ================================================================
 connectDB().then(() => {
   app.listen(PORT, () => {
