@@ -38,8 +38,6 @@
     .tab-btn:hover{color:var(--text-primary)}
     .page-section{display:none}
     .page-section.active{display:block}
-    .bulk-textarea{width:100%;height:200px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);color:#f1f5f9;padding:12px;border-radius:10px;font-family:'Inter',sans-serif;font-size:.9rem}
-    .bulk-textarea:focus{outline:none;border-color:#f59e0b}
     @media(max-width:640px){.number-hero{font-size:1.8rem}.stat-number{font-size:1.3rem}.glass-card{padding:1.2rem}}
   </style>
 </head>
@@ -64,7 +62,6 @@
     <button class="tab-btn active" data-page="dashboard">📊 Dashboard</button>
     <button class="tab-btn" data-page="getnumber">📱 Get Number</button>
     <button class="tab-btn" data-page="liveconsole">📨 Live Console</button>
-    <button class="tab-btn" data-page="bulkforgot">🔐 Bulk Forgot</button>
     <button class="tab-btn" data-page="profile">👤 Profile</button>
     <button class="tab-btn" data-page="payment">💳 Payment</button>
   </div>
@@ -91,10 +88,13 @@
   <div id="page-getnumber" class="page-section">
     <div class="glass-card">
       <h2 class="text-lg font-bold flex items-center gap-2 mb-4"><i data-feather="phone" class="text-[#f59e0b]"></i> Get Number</h2>
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <input id="rangeInput" type="text" placeholder="রেঞ্জ (যেমন: 4473845XXX)" class="input-dark" value="4473845XXX">
-        <button id="getNumberBtn" class="btn-gold justify-center"><i data-feather="refresh-cw" class="w-4 h-4"></i> Get Number</button>
-        <button id="checkOtpBtn" class="btn-outline justify-center"><i data-feather="search" class="w-4 h-4"></i> Check OTP</button>
+        <input id="orderIdInput" type="text" placeholder="Order ID (ঐচ্ছিক)" class="input-dark">
+      </div>
+      <div class="flex gap-3 mt-3">
+        <button id="getNumberBtn" class="btn-gold flex-1 justify-center"><i data-feather="refresh-cw" class="w-4 h-4"></i> Get Number</button>
+        <button id="checkOtpBtn" class="btn-outline flex-1 justify-center"><i data-feather="search" class="w-4 h-4"></i> Check OTP</button>
       </div>
       <div id="numberResult" class="mt-4 p-4 bg-[#0a0e1a] rounded-xl text-center">
         <p class="text-text-muted text-sm">এখানে নাম্বার দেখাবে</p>
@@ -112,30 +112,6 @@
       <h2 class="text-lg font-bold flex items-center gap-2 mb-4"><i data-feather="activity" class="text-[#f59e0b]"></i> Live Console</h2>
       <div id="liveStream" class="space-y-2 max-h-96 overflow-y-auto">
         <p class="text-text-muted text-sm text-center py-4">Loading...</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============================================================ -->
-  <!-- PAGE: BULK FORGOT -->
-  <!-- ============================================================ -->
-  <div id="page-bulkforgot" class="page-section">
-    <div class="glass-card">
-      <h2 class="text-lg font-bold flex items-center gap-2 mb-4"><i data-feather="shield" class="text-[#f59e0b]"></i> Bulk Forgot Password</h2>
-      <p class="text-sm text-text-muted mb-4">প্রতি লাইনে একটি করে নাম্বার/ইমেইল দিন। (সর্বোচ্চ ২০০টি)</p>
-      
-      <textarea id="bulkNumbers" class="bulk-textarea" placeholder="+8801712345678
-+8801812345678
-user1@gmail.com"></textarea>
-      
-      <div class="flex gap-3 mt-3">
-        <button id="bulkSubmitBtn" class="btn-gold"><i data-feather="send" class="w-4 h-4"></i> সাবমিট করুন</button>
-        <button id="bulkStatusBtn" class="btn-outline"><i data-feather="refresh-cw" class="w-4 h-4"></i> স্ট্যাটাস দেখুন</button>
-      </div>
-      
-      <div id="bulkResult" class="mt-4 p-4 bg-[#0a0e1a] rounded-xl">
-        <p class="text-text-muted text-sm">রেজাল্ট এখানে দেখাবে...</p>
-        <div id="bulkResultList" class="mt-2 max-h-60 overflow-y-auto"></div>
       </div>
     </div>
   </div>
@@ -251,7 +227,7 @@ user1@gmail.com"></textarea>
     display.textContent = '⏳';
     status.textContent = 'নাম্বার নেওয়া হচ্ছে...';
     try {
-      const res = await fetch(`${API_BASE}/api/fastx/get-number`, {
+      const res = await fetch(`${API_BASE}/api/get-number`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ range })
@@ -272,14 +248,20 @@ user1@gmail.com"></textarea>
     }
   });
 
+  // ================================================================
+  //  CHECK OTP
+  // ================================================================
   document.getElementById('checkOtpBtn').addEventListener('click', async () => {
-    const number = document.getElementById('rangeInput').value.trim();
-    if (!number) { alert('দয়া করে একটি নাম্বার দিন!'); return; }
+    const orderId = document.getElementById('orderIdInput').value.trim();
+    if (!orderId) {
+      alert('দয়া করে Order ID দিন!');
+      return;
+    }
     try {
-      const res = await fetch(`${API_BASE}/api/fastx/check-otp?number=${number}`);
+      const res = await fetch(`${API_BASE}/api/check-otp?orderId=${orderId}`);
       const data = await res.json();
       if (data.success && data.otp) {
-        alert(`📱 ${data.otp.nomor}\n📊 স্ট্যাটাস: ${data.otp.status}\n🔑 OTP: ${data.otp.kode_otp || 'পাওয়া যায়নি'}`);
+        alert(`📱 ${data.otp.number}\n🔑 OTP: ${data.otp.otp || data.otp.sms || 'পাওয়া যায়নি'}`);
         loadOtps();
       } else {
         alert(data.message || 'কোনো তথ্য পাওয়া যায়নি');
@@ -338,87 +320,6 @@ user1@gmail.com"></textarea>
       }
     } catch (e) {
       result.innerHTML = `<span class="text-red-400">Error: ${e.message}</span>`;
-    }
-  });
-
-  // ================================================================
-  //  BULK FORGOT
-  // ================================================================
-  document.getElementById('bulkSubmitBtn').addEventListener('click', async () => {
-    const text = document.getElementById('bulkNumbers').value;
-    const numbers = text.split('\n').map(n => n.trim()).filter(n => n !== '');
-    
-    if (numbers.length === 0) {
-      alert('দয়া করে কমপক্ষে একটি নাম্বার/ইমেইল দিন!');
-      return;
-    }
-    
-    if (numbers.length > 200) {
-      alert('সর্বোচ্চ ২০০টি নাম্বার/ইমেইল দেওয়া যাবে!');
-      return;
-    }
-    
-    const resultDiv = document.getElementById('bulkResult');
-    const resultList = document.getElementById('bulkResultList');
-    resultDiv.innerHTML = '<p class="text-text-muted text-sm">⏳ প্রসেসিং হচ্ছে...</p>';
-    resultList.innerHTML = '';
-    
-    try {
-      const res = await fetch(`${API_BASE}/api/bulk-forgot`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ numbers })
-      });
-      const data = await res.json();
-      
-      if (data.success) {
-        let html = '';
-        data.results.forEach((item, index) => {
-          const status = item.success ? '✅' : '❌';
-          const color = item.success ? 'text-[#10b981]' : 'text-red-400';
-          html += `<div class="flex items-center gap-2 text-sm py-1 border-b border-white/5">
-            <span>${index+1}.</span>
-            <span class="font-mono">${item.identifier}</span>
-            <span class="${color}">${status} ${item.message}</span>
-          </div>`;
-        });
-        resultList.innerHTML = html;
-        resultDiv.innerHTML = `<p class="text-text-muted text-sm">✅ ${data.results.filter(r => r.success).length} সফল, ${data.results.filter(r => !r.success).length} ব্যর্থ</p>`;
-      } else {
-        resultDiv.innerHTML = `<p class="text-red-400 text-sm">❌ ${data.message}</p>`;
-      }
-    } catch (e) {
-      resultDiv.innerHTML = `<p class="text-red-400 text-sm">❌ Error: ${e.message}</p>`;
-    }
-  });
-
-  document.getElementById('bulkStatusBtn').addEventListener('click', async () => {
-    const resultDiv = document.getElementById('bulkResult');
-    const resultList = document.getElementById('bulkResultList');
-    
-    try {
-      const res = await fetch(`${API_BASE}/api/bulk-forgot-status`);
-      const data = await res.json();
-      
-      if (data.success && data.results.length > 0) {
-        let html = '';
-        data.results.forEach((item, index) => {
-          const status = item.success ? '✅' : '❌';
-          const color = item.success ? 'text-[#10b981]' : 'text-red-400';
-          html += `<div class="flex items-center gap-2 text-sm py-1 border-b border-white/5">
-            <span>${index+1}.</span>
-            <span class="font-mono">${item.identifier}</span>
-            <span class="${color}">${status} ${item.message}</span>
-          </div>`;
-        });
-        resultList.innerHTML = html;
-        resultDiv.innerHTML = `<p class="text-text-muted text-sm">📋 সর্বশেষ রেজাল্ট</p>`;
-      } else {
-        resultDiv.innerHTML = '<p class="text-text-muted text-sm">📭 এখনো কোনো রেজাল্ট নেই</p>';
-        resultList.innerHTML = '';
-      }
-    } catch (e) {
-      resultDiv.innerHTML = `<p class="text-red-400 text-sm">❌ Error: ${e.message}</p>`;
     }
   });
 
