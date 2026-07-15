@@ -11,7 +11,7 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// ===== মিডলওয়্যার =====
+// ===== মিডলওয়্যার =====
 app.use(cors({
     origin: '*',
     credentials: true
@@ -23,7 +23,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static('.'));
 
 // ==========================================
-//  🔥 Supabase ক্লায়েন্ট
+//  🔥 Supabase ক্লায়েন্ট
 // ==========================================
 
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -36,7 +36,7 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-console.log('✅ Supabase সংযোগ স্থাপিত হয়েছে');
+console.log('✅ Supabase সংযোগ স্থাপিত হয়েছে');
 
 // ==========================================
 //  📌 কনফিগারেশন
@@ -45,7 +45,7 @@ console.log('✅ Supabase সংযোগ স্থাপিত হয়েছে'
 const CONFIG = {
     DEV_MODE: process.env.NODE_ENV === 'development',
     OTP_EXPIRY_MINUTES: 5,
-    USE_REAL_SMS: false // true করলে Twilio চালু হবে
+    USE_REAL_SMS: false
 };
 
 // ==========================================
@@ -94,7 +94,7 @@ async function saveOTPToSupabase(phoneNumber, otp, orderId) {
             return { success: false, error: error.message };
         }
         
-        console.log(`✅ OTP সেভ করা হয়েছে: ${phoneNumber}`);
+        console.log(`✅ OTP সেভ করা হয়েছে: ${phoneNumber}`);
         return { success: true, data };
         
     } catch (error) {
@@ -109,7 +109,6 @@ async function saveOTPToSupabase(phoneNumber, otp, orderId) {
 
 async function verifyOTPFromSupabase(phoneNumber, otp) {
     try {
-        // OTP খোঁজা
         const { data, error } = await supabase
             .from('otp_records')
             .select('*')
@@ -121,20 +120,18 @@ async function verifyOTPFromSupabase(phoneNumber, otp) {
         if (error || !data) {
             return { 
                 success: false, 
-                message: 'OTP পাওয়া যায়নি বা ইতিমধ্যে ব্যবহার করা হয়েছে' 
+                message: 'OTP পাওয়া যায়নি বা ইতিমধ্যে ব্যবহার করা হয়েছে' 
             };
         }
         
-        // মেয়াদ শেষ কিনা চেক
         const expiresAt = new Date(data.expires_at);
         if (Date.now() > expiresAt.getTime()) {
             return { 
                 success: false, 
-                message: 'OTP এর মেয়াদ শেষ হয়েছে' 
+                message: 'OTP এর মেয়াদ শেষ হয়েছে' 
             };
         }
         
-        // ✅ OTP সঠিক → verified true করে দিন
         const { error: updateError } = await supabase
             .from('otp_records')
             .update({ verified: true, verified_at: new Date().toISOString() })
@@ -158,21 +155,18 @@ async function verifyOTPFromSupabase(phoneNumber, otp) {
 }
 
 // ==========================================
-//  🔥 API এন্ডপয়েন্টসমূহ
+//  🔥 API এন্ডপয়েন্টসমূহ
 // ==========================================
 
-// ------------------------------
 // ১. নতুন নম্বর ও OTP জেনারেট
-// ------------------------------
 app.post('/api/get-otp', async (req, res) => {
-    console.log('📥 নতুন OTP রিকোয়েস্ট');
+    console.log('📥 নতুন OTP রিকোয়েস্ট');
     
     try {
         const phoneNumber = generateNumber();
         const otp = generateOTP();
         const orderId = generateOrderId();
         
-        // Supabase-এ সেভ
         const result = await saveOTPToSupabase(phoneNumber, otp, orderId);
         
         if (!result.success) {
@@ -185,15 +179,14 @@ app.post('/api/get-otp', async (req, res) => {
         
         console.log(`📞 নতুন নম্বর: ${phoneNumber}, OTP: ${otp}`);
         
-        // ✅ সফল রেসপন্স
         res.json({
             success: true,
             number: phoneNumber,
             orderId: orderId,
             otp: CONFIG.DEV_MODE ? otp : null,
             message: CONFIG.DEV_MODE ? 
-                'ডেভ মোড: OTP জেনারেট হয়েছে' : 
-                'OTP জেনারেট হয়েছে',
+                'ডেভ মোড: OTP জেনারেট হয়েছে' : 
+                'OTP জেনারেট হয়েছে',
             expiresIn: `${CONFIG.OTP_EXPIRY_MINUTES} মিনিট`
         });
         
@@ -207,9 +200,7 @@ app.post('/api/get-otp', async (req, res) => {
     }
 });
 
-// ------------------------------
 // ২. OTP ভেরিফাই
-// ------------------------------
 app.post('/api/verify-otp', async (req, res) => {
     const { phoneNumber, otp } = req.body;
     
@@ -223,13 +214,10 @@ app.post('/api/verify-otp', async (req, res) => {
     }
     
     const result = await verifyOTPFromSupabase(phoneNumber, otp);
-    
     res.json(result);
 });
 
-// ------------------------------
 // ৩. নম্বরের OTP স্ট্যাটাস
-// ------------------------------
 app.get('/api/otp-status/:phoneNumber', async (req, res) => {
     const { phoneNumber } = req.params;
     
@@ -245,7 +233,7 @@ app.get('/api/otp-status/:phoneNumber', async (req, res) => {
         if (error || !data) {
             return res.json({
                 success: false,
-                message: 'নম্বরটি পাওয়া যায়নি'
+                message: 'নম্বরটি পাওয়া যায়নি'
             });
         }
         
@@ -266,9 +254,7 @@ app.get('/api/otp-status/:phoneNumber', async (req, res) => {
     }
 });
 
-// ------------------------------
 // ৪. সব OTP তালিকা (অ্যাডমিন)
-// ------------------------------
 app.get('/api/all-otps', async (req, res) => {
     try {
         const { data, error } = await supabase
@@ -298,12 +284,9 @@ app.get('/api/all-otps', async (req, res) => {
     }
 });
 
-// ------------------------------
 // ৫. হেলথ চেক
-// ------------------------------
 app.get('/api/health', async (req, res) => {
     try {
-        // Supabase সংযোগ টেস্ট
         const { data, error } = await supabase
             .from('otp_records')
             .select('count')
@@ -325,9 +308,7 @@ app.get('/api/health', async (req, res) => {
     }
 });
 
-// ------------------------------
 // ৬. হোম রুট
-// ------------------------------
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/index.html');
 });
@@ -337,11 +318,11 @@ app.get('/', (req, res) => {
 // ==========================================
 
 app.listen(PORT, () => {
-    console.log(`\n🚀 OTP Platform চালু হয়েছে!`);
+    console.log(`\n🚀 OTP Platform চালু হয়েছে!`);
     console.log(`📡 http://localhost:${PORT}`);
     console.log(`🔗 Supabase: ${supabaseUrl ? '✅ সংযুক্ত' : '❌ নেই'}`);
     console.log(`🧪 ডেভ মোড: ${CONFIG.DEV_MODE ? 'চালু ✅' : 'বন্ধ ❌'}`);
-    console.log(`⏰ OTP মেয়াদ: ${CONFIG.OTP_EXPIRY_MINUTES} মিনিট\n`);
+    console.log(`⏰ OTP মেয়াদ: ${CONFIG.OTP_EXPIRY_MINUTES} মিনিট\n`);
 });
 
 // ===== এরর হ্যান্ডলিং =====
