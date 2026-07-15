@@ -1,318 +1,354 @@
+// ==========================================
+//  OTP Management Platform - ব্যাকএন্ড API
+//  With Supabase Integration
+// ==========================================
+
 const express = require('express');
 const cors = require('cors');
-const bodyParser = require('body-parser');
-const { MongoClient } = require('mongodb');
-const { v4: uuidv4 } = require('uuid');
+const { createClient } = require('@supabase/supabase-js');
+require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 
-app.use(cors());
-app.use(bodyParser.json());
+// ===== মিডলওয়্যার =====
+app.use(cors({
+    origin: '*',
+    credentials: true
+}));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// ===== স্ট্যাটিক ফাইল =====
 app.use(express.static('.'));
 
-// ================================================================
-//  TELEGRAM BOT TOKEN
-// ================================================================
-const TELEGRAM_BOT_TOKEN = '8806967153:AAFE7X5CS_t7o4FvzuU4x5qK_emgRok6GW0';
-const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
+// ==========================================
+//  🔥 Supabase ক্লায়েন্ট
+// ==========================================
 
-// ================================================================
-//  OTP API (SMSPool) — আপনার API Key
-// ================================================================
-const OTP_API_KEY = 'nx_6pBZ1wxR5cQkx5tSBQi9L_zavkrNdzU9eYxXOg';
-const OTP_API_BASE = 'https://api.smspool.net';
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
 
-// ================================================================
-//  MONGODB
-// ================================================================
-const MONGODB_URI = 'mongodb+srv://surujsarkar01_db_user:hSiXnPCwFKWeChNm@cluster0.uovzwiy.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
-const DB_NAME = 'bd_unique_method';
-let db, numbersCollection, otpsCollection, usersCollection;
-
-async function connectDB() {
-  try {
-    const client = new MongoClient(MONGODB_URI);
-    await client.connect();
-    db = client.db(DB_NAME);
-    numbersCollection = db.collection('numbers');
-    otpsCollection = db.collection('otps');
-    usersCollection = db.collection('users');
-    console.log('✅ MongoDB Connected');
-    const usersCount = await usersCollection.countDocuments();
-    if (usersCount === 0) {
-      await usersCollection.insertOne({
-        balance: 0,
-        totalEarned: 0,
-        totalOtps: 0,
-        totalNumbers: 0,
-        referBalance: 0,
-        referredUsers: []
-      });
-    }
-  } catch (error) {
-    console.error('❌ MongoDB Error:', error);
-  }
+if (!supabaseUrl || !supabaseKey) {
+    console.error('❌ SUPABASE_URL বা SUPABASE_ANON_KEY সেট করা নেই!');
+    process.exit(1);
 }
 
-// ================================================================
-//  TELEGRAM FUNCTIONS
-// ================================================================
-async function sendTelegramMessage(chatId, text, extra = {}) {
-  try {
-    await fetch(`${TELEGRAM_API}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'Markdown', ...extra })
-    });
-  } catch (error) {
-    console.error('❌ Telegram send error:', error);
-  }
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+console.log('✅ Supabase সংযোগ স্থাপিত হয়েছে');
+
+// ==========================================
+//  📌 কনফিগারেশন
+// ==========================================
+
+const CONFIG = {
+    DEV_MODE: process.env.NODE_ENV === 'development',
+    OTP_EXPIRY_MINUTES: 5,
+    USE_REAL_SMS: false // true করলে Twilio চালু হবে
+};
+
+// ==========================================
+//  🧠 ইউটিলিটি ফাংশন
+// ==========================================
+
+function generateOTP() {
+    return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-// ================================================================
-//  OTP API FUNCTIONS (GET NUMBER & CHECK OTP)
-// ================================================================
+function generateNumber() {
+    const prefixes = ['4473845', '4473846', '4473847', '4473848', '4473849'];
+    const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+    const suffix = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+    return prefix + suffix;
+}
 
-app.post('/api/get-number', async (req, res) => {
-  try {
-    const { country, service } = req.body;
-    const response = await fetch(`${OTP_API_BASE}/purchase/1`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        api_key: OTP_API_KEY,
-        country: country || 'US',
-        service: service || 'google'
-      })
-    });
-    const data = await response.json();
-    if (data.success !== false && data.number) {
-      await numbersCollection.insertOne({
-        id: data.order_id || data.id || 'N/A',
-        number: data.number,
-        country: data.country || country,
-        status: 'assigned',
-        source: 'smspool',
-        orderId: data.order_id || data.id,
-        createdAt: new Date()
-      });
-      await usersCollection.updateOne({}, { $inc: { totalNumbers: 1 } });
-      return res.json({ success: true, number: data });
-    } else {
-      return res.json({ success: false, message: data.message || 'Failed to get number' });
+function generateOrderId() {
+    return 'ORD-' + Date.now().toString(36).toUpperCase() + 
+           Math.random().toString(36).substr(2, 4).toUpperCase();
+}
+
+// ==========================================
+//  📞 OTP জেনারেট ও সেভ (Supabase)
+// ==========================================
+
+async function saveOTPToSupabase(phoneNumber, otp, orderId) {
+    try {
+        const expiresAt = new Date(Date.now() + CONFIG.OTP_EXPIRY_MINUTES * 60 * 1000);
+        
+        const { data, error } = await supabase
+            .from('otp_records')
+            .insert([
+                {
+                    phone_number: phoneNumber,
+                    otp: otp,
+                    order_id: orderId,
+                    expires_at: expiresAt.toISOString(),
+                    verified: false,
+                    created_at: new Date().toISOString()
+                }
+            ]);
+        
+        if (error) {
+            console.error('❌ Supabase সেভ করতে ব্যর্থ:', error);
+            return { success: false, error: error.message };
+        }
+        
+        console.log(`✅ OTP সেভ করা হয়েছে: ${phoneNumber}`);
+        return { success: true, data };
+        
+    } catch (error) {
+        console.error('❌ ডাটাবেস এরর:', error);
+        return { success: false, error: error.message };
     }
-  } catch (error) {
-    return res.json({ success: false, message: error.message });
-  }
-});
+}
 
-app.get('/api/check-otp', async (req, res) => {
-  try {
-    const { orderId } = req.query;
-    if (!orderId) {
-      return res.json({ success: false, message: 'Order ID required' });
+// ==========================================
+//  🔍 OTP ভেরিফাই (Supabase)
+// ==========================================
+
+async function verifyOTPFromSupabase(phoneNumber, otp) {
+    try {
+        // OTP খোঁজা
+        const { data, error } = await supabase
+            .from('otp_records')
+            .select('*')
+            .eq('phone_number', phoneNumber)
+            .eq('otp', otp)
+            .eq('verified', false)
+            .single();
+        
+        if (error || !data) {
+            return { 
+                success: false, 
+                message: 'OTP পাওয়া যায়নি বা ইতিমধ্যে ব্যবহার করা হয়েছে' 
+            };
+        }
+        
+        // মেয়াদ শেষ কিনা চেক
+        const expiresAt = new Date(data.expires_at);
+        if (Date.now() > expiresAt.getTime()) {
+            return { 
+                success: false, 
+                message: 'OTP এর মেয়াদ শেষ হয়েছে' 
+            };
+        }
+        
+        // ✅ OTP সঠিক → verified true করে দিন
+        const { error: updateError } = await supabase
+            .from('otp_records')
+            .update({ verified: true, verified_at: new Date().toISOString() })
+            .eq('id', data.id);
+        
+        if (updateError) {
+            console.error('❌ আপডেট করতে ব্যর্থ:', updateError);
+            return { success: false, message: 'OTP ভেরিফাই করতে ব্যর্থ' };
+        }
+        
+        return { 
+            success: true, 
+            message: '✅ OTP সঠিক!',
+            data: data
+        };
+        
+    } catch (error) {
+        console.error('❌ ভেরিফাই এরর:', error);
+        return { success: false, message: 'সার্ভার ত্রুটি' };
     }
-    const response = await fetch(`${OTP_API_BASE}/sms/1/${orderId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ api_key: OTP_API_KEY })
-    });
-    const data = await response.json();
-    if (data.success !== false && data.sms) {
-      const otpMatch = data.sms.match(/\b\d{4,6}\b/);
-      await otpsCollection.insertOne({
-        number: data.number || 'N/A',
-        otp: otpMatch ? otpMatch[0] : data.sms,
-        message: data.sms,
-        service: 'SMSPool',
-        status: 'success',
-        timestamp: new Date().toISOString(),
-        orderId: orderId
-      });
-      await usersCollection.updateOne({}, { $inc: { balance: 0.10, totalEarned: 0.10, totalOtps: 1 } });
-      return res.json({ success: true, otp: data });
-    } else {
-      return res.json({ success: false, message: data.message || 'No OTP found' });
-    }
-  } catch (error) {
-    return res.json({ success: false, message: error.message });
-  }
-});
+}
 
-// ================================================================
-//  EXISTING API ROUTES
-// ================================================================
-app.get('/api/stats', async (req, res) => {
-  try {
-    const user = await usersCollection.findOne({});
-    const allOtps = await otpsCollection.find({}).toArray();
-    const successOtps = allOtps.filter(o => o.status === 'success').length;
-    return res.json({
-      success: true,
-      today: {
-        numbers: user?.totalNumbers || 0,
-        otps: allOtps.length || 0,
-        success: allOtps.length > 0 ? Math.round((successOtps / allOtps.length) * 100) + '%' : '0%'
-      },
-      allTime: {
-        numbers: user?.totalNumbers || 0,
-        otps: user?.totalOtps || 0,
-        success: user?.totalOtps > 0 ? Math.round((successOtps / user?.totalOtps) * 100) + '%' : '0%',
-        earned: user?.totalEarned || 0
-      },
-      balance: user?.balance || 0,
-      referBalance: user?.referBalance || 0
-    });
-  } catch (error) {
-    return res.json({ success: false, message: error.message });
-  }
-});
+// ==========================================
+//  🔥 API এন্ডপয়েন্টসমূহ
+// ==========================================
 
-app.get('/api/otps', async (req, res) => {
-  try {
-    const otps = await otpsCollection.find({}).sort({ timestamp: -1 }).toArray();
-    return res.json({ success: true, otps });
-  } catch (error) {
-    return res.json({ success: false, message: error.message });
-  }
-});
-
-app.get('/api/numbers', async (req, res) => {
-  try {
-    const numbers = await numbersCollection.find({}).toArray();
-    return res.json({ success: true, numbers });
-  } catch (error) {
-    return res.json({ success: false, message: error.message });
-  }
-});
-
-app.post('/api/withdraw', async (req, res) => {
-  try {
-    const { amount, method } = req.body;
-    if (!amount || amount < 1) {
-      return res.json({ success: false, message: 'Minimum $1.00' });
-    }
-    const user = await usersCollection.findOne({});
-    if (!user || user.balance < amount) {
-      return res.json({ success: false, message: 'Insufficient balance' });
-    }
-    await usersCollection.updateOne({}, { $inc: { balance: -amount } });
-    return res.json({ success: true, message: `Withdraw $${amount} via ${method} successful` });
-  } catch (error) {
-    return res.json({ success: false, message: error.message });
-  }
-});
-
-// ================================================================
-//  TELEGRAM WEBHOOK
-// ================================================================
-app.post('/api/telegram-webhook', async (req, res) => {
-  try {
-    const { message, callback_query } = req.body;
-    if (!message && !callback_query) return res.sendStatus(200);
-    const mainMenu = {
-      reply_markup: {
-        inline_keyboard: [
-          [{ text: '📱 Get Number', callback_data: 'get_number' }],
-          [{ text: '💰 Balance', callback_data: 'balance' }],
-          [{ text: '💳 Withdraw', callback_data: 'withdraw' }],
-          [{ text: '🔗 Refer', callback_data: 'refer' }]
-        ]
-      }
-    };
-    if (callback_query) {
-      const chatId = callback_query.message.chat.id;
-      const data = callback_query.data;
-      if (data === 'get_number') {
-        await sendTelegramMessage(chatId, `📱 **প্ল্যাটফর্ম সিলেক্ট করুন**`, {
-          reply_markup: {
-            inline_keyboard: [
-              [{ text: 'Facebook (1%)', callback_data: 'platform_facebook' }],
-              [{ text: 'Instagram (1%)', callback_data: 'platform_instagram' }],
-              [{ text: 'WhatsApp (2%)', callback_data: 'platform_whatsapp' }],
-              [{ text: 'Telegram (1%)', callback_data: 'platform_telegram' }],
-              [{ text: '🔙 ফিরে যান', callback_data: 'back_menu' }]
-            ]
-          }
+// ------------------------------
+// ১. নতুন নম্বর ও OTP জেনারেট
+// ------------------------------
+app.post('/api/get-otp', async (req, res) => {
+    console.log('📥 নতুন OTP রিকোয়েস্ট');
+    
+    try {
+        const phoneNumber = generateNumber();
+        const otp = generateOTP();
+        const orderId = generateOrderId();
+        
+        // Supabase-এ সেভ
+        const result = await saveOTPToSupabase(phoneNumber, otp, orderId);
+        
+        if (!result.success) {
+            return res.status(500).json({
+                success: false,
+                message: 'OTP সেভ করতে ব্যর্থ',
+                error: result.error
+            });
+        }
+        
+        console.log(`📞 নতুন নম্বর: ${phoneNumber}, OTP: ${otp}`);
+        
+        // ✅ সফল রেসপন্স
+        res.json({
+            success: true,
+            number: phoneNumber,
+            orderId: orderId,
+            otp: CONFIG.DEV_MODE ? otp : null,
+            message: CONFIG.DEV_MODE ? 
+                'ডেভ মোড: OTP জেনারেট হয়েছে' : 
+                'OTP জেনারেট হয়েছে',
+            expiresIn: `${CONFIG.OTP_EXPIRY_MINUTES} মিনিট`
         });
-      }
-      else if (data.startsWith('platform_')) {
-        const platform = data.replace('platform_', '');
-        await sendTelegramMessage(chatId, `✅ **${platform.toUpperCase()}** সিলেক্ট করা হয়েছে!\n\nএখন রেঞ্জ দিন (যেমন: 4473845XXX):`);
-      }
-      else if (data === 'balance') {
-        const user = await usersCollection.findOne({});
-        await sendTelegramMessage(chatId,
-          `💰 **আপনার ব্যালেন্স**\n\nব্যালেন্স: $${user?.balance?.toFixed(3) || '0.000'}\nমোট আয়: $${user?.totalEarned?.toFixed(3) || '0.000'}\nরেফার বোনাস: $${user?.referBalance?.toFixed(3) || '0.000'}\nমোট OTP: ${user?.totalOtps || 0}`,
-          { reply_markup: { inline_keyboard: [[{ text: '🔙 মেনু', callback_data: 'back_menu' }]] } }
-        );
-      }
-      else if (data === 'withdraw') {
-        const user = await usersCollection.findOne({});
-        await sendTelegramMessage(chatId,
-          `💳 **উইথড্র**\n\nআপনার ব্যালেন্স: $${user?.balance?.toFixed(3) || '0.000'}`,
-          {
-            reply_markup: {
-              inline_keyboard: [
-                [{ text: 'bKash', callback_data: 'withdraw_bkash' }],
-                [{ text: 'Nagad', callback_data: 'withdraw_nagad' }],
-                [{ text: 'Binance (USDT)', callback_data: 'withdraw_binance' }],
-                [{ text: '🔙 ফিরে যান', callback_data: 'back_menu' }]
-              ]
-            }
-          }
-        );
-      }
-      else if (data === 'refer') {
-        const referLink = `https://t.me/BDUNIQUE_METHOD_bot?start=ref_${chatId}`;
-        await sendTelegramMessage(chatId, `🔗 **রেফার লিংক**\n\n${referLink}`, {
-          reply_markup: { inline_keyboard: [[{ text: '🔙 মেনু', callback_data: 'back_menu' }]] }
+        
+    } catch (error) {
+        console.error('❌ OTP জেনারেট করতে ব্যর্থ:', error);
+        res.status(500).json({
+            success: false,
+            message: 'সার্ভার ত্রুটি',
+            error: error.message
         });
-      }
-      else if (data === 'back_menu') {
-        await sendTelegramMessage(chatId, `👋 **BD UNIQUE METHOD** বটে ফিরে আসুন!`, mainMenu);
-      }
-      else if (data.startsWith('withdraw_')) {
-        const method = data.replace('withdraw_', '');
-        await sendTelegramMessage(chatId,
-          `✅ **${method.toUpperCase()}** সিলেক্ট করা হয়েছে!\n\nআপনার উইথড্র রিকোয়েস্ট প্রক্রিয়াধীন...`,
-          { reply_markup: { inline_keyboard: [[{ text: '🔙 মেনু', callback_data: 'back_menu' }]] } }
-        );
-      }
-      return res.sendStatus(200);
     }
-    if (!message) return res.sendStatus(200);
-    const chatId = message.chat.id;
-    const text = message.text || '';
-    if (text === '/start') {
-      await sendTelegramMessage(chatId, `👋 **BD UNIQUE METHOD** বটে স্বাগতম!`, mainMenu);
-    } else {
-      await sendTelegramMessage(chatId, `❓ আমি বুঝতে পারিনি। /start দিয়ে বট চালু করুন।`);
-    }
-    res.sendStatus(200);
-  } catch (error) {
-    console.error('Webhook error:', error);
-    res.sendStatus(200);
-  }
 });
 
-// ================================================================
-//  WEBSITE ROUTE
-// ================================================================
+// ------------------------------
+// ২. OTP ভেরিফাই
+// ------------------------------
+app.post('/api/verify-otp', async (req, res) => {
+    const { phoneNumber, otp } = req.body;
+    
+    console.log(`🔍 OTP চেক: ${phoneNumber} -> ${otp}`);
+    
+    if (!phoneNumber || !otp) {
+        return res.status(400).json({
+            success: false,
+            message: 'ফোন নম্বর ও OTP প্রদান করুন'
+        });
+    }
+    
+    const result = await verifyOTPFromSupabase(phoneNumber, otp);
+    
+    res.json(result);
+});
+
+// ------------------------------
+// ৩. নম্বরের OTP স্ট্যাটাস
+// ------------------------------
+app.get('/api/otp-status/:phoneNumber', async (req, res) => {
+    const { phoneNumber } = req.params;
+    
+    try {
+        const { data, error } = await supabase
+            .from('otp_records')
+            .select('*')
+            .eq('phone_number', phoneNumber)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+        
+        if (error || !data) {
+            return res.json({
+                success: false,
+                message: 'নম্বরটি পাওয়া যায়নি'
+            });
+        }
+        
+        res.json({
+            success: true,
+            number: data.phone_number,
+            orderId: data.order_id,
+            verified: data.verified,
+            expiresAt: data.expires_at,
+            timeLeft: Math.max(0, Math.floor((new Date(data.expires_at) - Date.now()) / 1000)) + ' সেকেন্ড'
+        });
+        
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'সার্ভার ত্রুটি'
+        });
+    }
+});
+
+// ------------------------------
+// ৪. সব OTP তালিকা (অ্যাডমিন)
+// ------------------------------
+app.get('/api/all-otps', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('otp_records')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(50);
+        
+        if (error) {
+            return res.status(500).json({
+                success: false,
+                message: 'ডেটা আনতে ব্যর্থ'
+            });
+        }
+        
+        res.json({
+            success: true,
+            count: data.length,
+            data: data
+        });
+        
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'সার্ভার ত্রুটি'
+        });
+    }
+});
+
+// ------------------------------
+// ৫. হেলথ চেক
+// ------------------------------
+app.get('/api/health', async (req, res) => {
+    try {
+        // Supabase সংযোগ টেস্ট
+        const { data, error } = await supabase
+            .from('otp_records')
+            .select('count')
+            .limit(1);
+        
+        res.json({
+            status: '🟢 OK',
+            uptime: process.uptime(),
+            timestamp: new Date().toISOString(),
+            supabase: error ? '❌ সংযোগ নেই' : '✅ সংযুক্ত',
+            env: process.env.NODE_ENV || 'development'
+        });
+        
+    } catch (error) {
+        res.status(500).json({
+            status: '🔴 ERROR',
+            message: error.message
+        });
+    }
+});
+
+// ------------------------------
+// ৬. হোম রুট
+// ------------------------------
 app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/index.html');
+    res.sendFile(__dirname + '/index.html');
 });
 
-// ================================================================
-//  START SERVER
-// ================================================================
-connectDB().then(() => {
-  app.listen(PORT, () => {
-    console.log(`✅ Server running on port ${PORT}`);
-    console.log(`✅ Website: http://localhost:${PORT}`);
-    console.log(`✅ Bot: @BDUNIQUE_METHOD_bot`);
-  });
+// ==========================================
+//  🚀 সার্ভার চালু
+// ==========================================
+
+app.listen(PORT, () => {
+    console.log(`\n🚀 OTP Platform চালু হয়েছে!`);
+    console.log(`📡 http://localhost:${PORT}`);
+    console.log(`🔗 Supabase: ${supabaseUrl ? '✅ সংযুক্ত' : '❌ নেই'}`);
+    console.log(`🧪 ডেভ মোড: ${CONFIG.DEV_MODE ? 'চালু ✅' : 'বন্ধ ❌'}`);
+    console.log(`⏰ OTP মেয়াদ: ${CONFIG.OTP_EXPIRY_MINUTES} মিনিট\n`);
 });
 
-module.exports = app;
+// ===== এরর হ্যান্ডলিং =====
+process.on('uncaughtException', (err) => {
+    console.error('💥 Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (err) => {
+    console.error('💥 Unhandled Rejection:', err);
+});
